@@ -1,0 +1,11 @@
+class Client1(process):
+	def setup(total_pings:int): pass
+
+	def run():
+		await(total_pings == 0)
+
+	def receive(msg=('Ping',replicaList), from_=p):
+		output(replicaList)
+		output("Pinged")
+		send(('Pong',), to=p)
+		total_pings -= 1
