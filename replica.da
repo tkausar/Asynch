@@ -1,0 +1,6 @@
+class Replica(process):
+   def setup(id):
+   	output("Yes I am naughty", id)
+   
+   def run():
+   	output("Yes I am not")

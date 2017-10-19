@@ -1,5 +1,22 @@
+import sys
+Replica = import_da('replica')
 class Olympus(process):
-  def setup(config): pass
+  def getReplicaList(t):
+  	replicaList = []
+  	output(t)
+  	numberOfReplica = (2*t) + 1;
+  	for counter in range(1,numberOfReplica+1):
+  		r = new(Replica.Replica, args=(counter,))
+  		output(r)
+  		replica = {}
+  		replica["id"] = counter
+  		replica["obj"] = r
+  		replicaList.append(replica)
+  	return replicaList;
+
+  def setup(config):
+  	replicaList = getReplicaList(config["t"])
+  	output(replicaList)
+ 
   def run():
-	  output("Ponged.")
-	  output(config)
+  	output("Ponged.")
