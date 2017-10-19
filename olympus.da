@@ -3,6 +3,7 @@ Replica = import_da('replica')
 Client = import_da('client')
 replicaList = []
 clientList = []
+
 class Olympus(process):
   def getReplicaList(t):
   	numberOfReplica = (2*t) + 1;
@@ -15,19 +16,39 @@ class Olympus(process):
   	return replicaList;
 
   def getClientList(count):
-  	for counter in range(1,count+1):
-  		c = new(Client.Client, args=(counter,))
+  	for counter in range(1,count+2):
+  		c = new(Client.Client, args=(counter,), at='node3')
   		client = {}
   		client["id"] = counter
   		client["obj"] = c
   		clientList.append(client)
   	return clientList;
 
+  def sendReplicaListToClient():
+  	output("Sending Replica list to client")
+  	for each in clientList:
+  		output("Sending replica to ", each["obj"])
+  		send(('Ping',), to=each["obj"])
+  		#await(received(('Pong',)))
+
+  def sendReplicaListToReplica():
+  	for each in replicaList:
+  		send((replicaList,), to=each["obj"])
+
   def setup(config):
+  	output("Setting up replica")
   	replicaList = getReplicaList(config["t"])
-  	clientList = getClientList(config["num_client"]);
+  	output("setting up client")
+  	clientList = getClientList(config["num_client"])
+  	sendReplicaListToClient()
+  	#sendReplicaListToReplica()
  
   def run():
-  	output(replicaList)
-  	output(clientList)
+  	#output(replicaList)
+  	#output(clientList)
+  	#for each in replicaList:
+  		#start(each["obj"])
+  	for each in clientList:
+  		start(each["obj"])
+  	#sendReplicaListToClient()
   	output("Ponged.")
