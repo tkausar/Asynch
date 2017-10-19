@@ -1,15 +1,25 @@
-flag = False
 class Replica(process):
-   replicaList = [] 
-   id = 0
-   def setup(id):
-   	id = id
-   	output("Replica ", id, " setup done")
+   def setup(id:int,flag,replicaList):
+        output("Replica ",id,"setup done")
 
-   def receive(msg=(replicaList,)):
-   	output(replicaList)
-   	replicaList = replicaList
- 
+   # msg from olympus   
+   def receive(msg=(replica,)):
+   	replicaList = replica
+   	flag = True
+
+   # msg from replica
+   def receive(msg=(str,id,)):
+   	output(str, id)
+
+   def sendRequest():
+   	output("Current replica", id)
+   	for each in replicaList:
+   		output(each["id"])
+   		if(each["id"] == id+1):
+   			output("Sending msg to next replica -", each)
+   			send(('MSG FROM Previous replica', id,), to=each["obj"])
+
    def run():
    	output("Running Replica - ", id)
    	await(flag == True)
+   	sendRequest()

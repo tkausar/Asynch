@@ -8,7 +8,7 @@ class Olympus(process):
   def getReplicaList(t):
   	numberOfReplica = (2*t) + 1;
   	for counter in range(1,numberOfReplica+1):
-  		r = new(Replica.Replica, args=(counter,), at='node2')
+  		r = new(Replica.Replica, args=(counter, False, []), at='node2')
   		replica = {}
   		replica["id"] = counter
   		replica["obj"] = r
@@ -31,6 +31,7 @@ class Olympus(process):
   		send((replicaList,), to=each["obj"])
 
   def sendReplicaListToReplica():
+  	output("Sending Replica list to all replica")
   	for each in replicaList:
   		output("Sending replica to ", each["obj"])
   		send((replicaList,), to=each["obj"])
@@ -44,8 +45,8 @@ class Olympus(process):
   	sendReplicaListToReplica()
  
   def run():
+  	for each in clientList:
+                start(each["obj"])
   	for each in replicaList:
   		start(each["obj"])
-  	for each in clientList:
-        	start(each["obj"])
   	output("Olympus is started.")

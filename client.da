@@ -1,22 +1,17 @@
 import copy
-replicaList = []
-
 class Client(process):
    def setup(id,flag,replicaList):
    	output("Client ",id,"setup done")
 
    def receive(msg=(replica,)):
    	replicaList = copy.deepcopy(replica)
-   	output(replicaList)
    	flag = True
 
    def sendRequest():
    	output("Sending msg to head replica", replicaList[0])
-   	send(('MSG FROM CLIENT',), to=replicaList[0]["obj"])
+   	send(('MSG FROM CLIENT', 0), to=replicaList[0]["obj"])
 
    def run():
    	output("Running client Id", id)
    	await(flag == True)
-   	output("Replica List from olympus", replicaList)
-   	output('After awiat')
    	sendRequest()
