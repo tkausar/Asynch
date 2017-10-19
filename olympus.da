@@ -1,0 +1,5 @@
+class Olympus(process):
+  def setup(config): pass
+  def run():
+	  output("Ponged.")
+	  output(config)

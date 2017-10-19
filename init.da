@@ -1,0 +1,26 @@
+import sys
+Olympus = import_da('olympus')
+def configParser(fileName,config):
+	with open(fileName,'r') as f:
+		for line in f:
+			if line[0] != '#':
+				(key,sep,val) = line.partition('=')
+				# if the line does not contain '=', it is invalid and hence ignored
+				if len(sep) != 0:
+					val = val.strip()
+					config[key.strip()] = int(val) if str.isdecimal(val) else val
+	print(config)
+	
+def main():
+	print("Starting init.da")
+	fileName = sys.argv[1]
+	config={}
+	configParser(fileName,config)
+	olyInstance = new(Olympus.Olympus, args=(config,))
+	start(olyInstance)
+	
+
+
+
+
+
