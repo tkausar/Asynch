@@ -1,0 +1,14 @@
+replicaList = []
+class Olympus1(process):
+    def setup(p:Client1, nrounds:int): pass
+
+    def run():
+        for i in range(nrounds):
+            clk = logical_clock()
+            send(('Ping',replicaList,), to=p)
+            await(some(received(('Pong',), clk=rclk), has=(rclk > clk)))
+
+    def receive(msg=('Pong',)):
+        output("Ponged.")
+
+		
