@@ -1,14 +1,15 @@
 replicaList = []
 class Olympus1(process):
-    def setup(p:Client1, nrounds:int): pass
+	def setup(p:Client1, nrounds:int, totalPongs:int): pass
 
-    def run():
-        for i in range(nrounds):
-            clk = logical_clock()
-            send(('Ping',replicaList,), to=p)
-            await(some(received(('Pong',), clk=rclk), has=(rclk > clk)))
+	def run():
+		for i in range(nrounds):
+			#clk = logical_clock()
+			send(('Ping',replicaList,), to=p)
+			#await(received(('Pong',),from_ =p))
+			#await(some(received(('Pong',), clk=rclk), has=(rclk > clk)))
+			await(totalPongs == 0)
 
-    def receive(msg=('Pong',)):
-        output("Ponged.")
-
-		
+	def receive(msg=('Pong',)):
+		output("Ponged.")
+		totalPongs -= 1

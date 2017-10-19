@@ -2,11 +2,11 @@ import sys
 Olympus1 = import_da('olympus1')
 Client1 = import_da('client1')
 def main():
-    nrounds = int(sys.argv[1]) if len(sys.argv) > 1 else 3
-    npings = int(sys.argv[2]) if len(sys.argv) > 2 else 3
+    nrounds = int(sys.argv[1]) if len(sys.argv) > 1 else 1
+    numClients = int(sys.argv[2]) if len(sys.argv) > 2 else 3
     config(clock='Lamport')
-    client1 = new(Client1.Client1, [nrounds * npings], num= 1)
-    olympus1 = new(Olympus1.Olympus1, num= npings)
-    setup(olympus1, (client1, nrounds))
+    client1 = new(Client1.Client1, [nrounds], num= numClients)
+    olympus1 = new(Olympus1.Olympus1, num= 1)
+    setup(olympus1, (client1, nrounds, nrounds * numClients))
     start(client1)
     start(olympus1)
