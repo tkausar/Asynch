@@ -8,7 +8,7 @@ class Olympus(process):
   def getReplicaList(t):
   	numberOfReplica = (2*t) + 1;
   	for counter in range(1,numberOfReplica+1):
-  		r = new(Replica.Replica, args=(counter,))
+  		r = new(Replica.Replica, args=(counter,), at='node2')
   		replica = {}
   		replica["id"] = counter
   		replica["obj"] = r
@@ -16,7 +16,7 @@ class Olympus(process):
   	return replicaList;
 
   def getClientList(count):
-  	for counter in range(1,count+2):
+  	for counter in range(1,count+1):
   		c = new(Client.Client, args=(counter,), at='node3')
   		client = {}
   		client["id"] = counter
@@ -28,27 +28,24 @@ class Olympus(process):
   	output("Sending Replica list to client")
   	for each in clientList:
   		output("Sending replica to ", each["obj"])
-  		send(('Ping',), to=each["obj"])
-  		#await(received(('Pong',)))
+  		send((replicaList,), to=each["obj"])
 
   def sendReplicaListToReplica():
   	for each in replicaList:
+  		output("Sending replica to ", each["obj"])
   		send((replicaList,), to=each["obj"])
 
   def setup(config):
   	output("Setting up replica")
   	replicaList = getReplicaList(config["t"])
-  	output("setting up client")
+  	output("Setting up client")
   	clientList = getClientList(config["num_client"])
   	sendReplicaListToClient()
-  	#sendReplicaListToReplica()
+  	sendReplicaListToReplica()
  
   def run():
-  	#output(replicaList)
-  	#output(clientList)
-  	#for each in replicaList:
-  		#start(each["obj"])
-  	for each in clientList:
+  	for each in replicaList:
   		start(each["obj"])
-  	#sendReplicaListToClient()
-  	output("Ponged.")
+  	for each in clientList:
+        	start(each["obj"])
+  	output("Olympus is started.")

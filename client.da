@@ -1,11 +1,23 @@
-import sys
+import copy
+flag = False
+replicaList = []
+
 class Client(process):
-   def setup(id):
-   	output("Yes I am naughty client", id)
-   
-   def receive(msg=('Ping',),from_ =p):
-   	output("OMG OMG OMG")
-   	#output(replicaList)
+   def setup(id,):
+   	output("Client ",id,"setup done")
+
+   def receive(msg=(replica,)):
+   	replicaList = copy.deepcopy(replica)
+   	output(replicaList)
+   	flag = True
+
+   def sendRequest():
+   	output("Sending msg to head replica", replicaList[0])
+   	send(('MSG FROM CLIENT',), to=replicaList[0].obj)
 
    def run():
-   	output("Yes I am not")
+   	output("Running client Id", id)
+   	await(flag == True)
+   	output("Replica List from olympus", replicaList)
+   	output('After awiat')
+   	sendRequest()

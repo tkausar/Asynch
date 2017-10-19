@@ -1,6 +1,15 @@
+flag = False
 class Replica(process):
+   replicaList = [] 
+   id = 0
    def setup(id):
-   	output("Yes I am naughty", id)
-   
+   	id = id
+   	output("Replica ", id, " setup done")
+
+   def receive(msg=(replicaList,)):
+   	output(replicaList)
+   	replicaList = replicaList
+ 
    def run():
-   	output("Yes I am not")
+   	output("Running Replica - ", id)
+   	await(flag == True)
