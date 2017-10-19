@@ -1,0 +1,11 @@
+import sys
+class Client(process):
+   def setup(id):
+   	output("Yes I am naughty client", id)
+   
+   def receive(msg=('Ping',),from_ =p):
+   	output("OMG OMG OMG")
+   	#output(replicaList)
+
+   def run():
+   	output("Yes I am not")
