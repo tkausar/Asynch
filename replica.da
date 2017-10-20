@@ -1,25 +1,31 @@
 class Replica(process):
-   def setup(id:int,flag,replicaList):
-        output("Replica ",id,"setup done")
+   def setup(id,flag,replicaList,clientList,isHead,isTail):
+        output("Replica ",id,"setup done", isHead, isTail)
 
-   # msg from olympus   
-   def receive(msg=(replica,)):
+   # msg from olympus 
+   def receive(msg=(replica,client,)):
    	replicaList = replica
+   	clientList = client
+   	output(replicaList , clientList)
    	flag = True
 
-   # msg from replica
-   def receive(msg=(str,id,)):
-   	output(str, id)
+   #msg from client/ replica
+   def receive(msg=(str,)):
+   	output(str)
 
    def sendRequest():
-   	output("Current replica", id)
-   	for each in replicaList:
-   		output(each["id"])
-   		if(each["id"] == id+1):
-   			output("Sending msg to next replica -", each)
-   			send(('MSG FROM Previous replica', id,), to=each["obj"])
+   	if (isTail == True):
+   		output("sending msg to client")
+   		output(clientList[0]["obj"]);
+   		send(('MSG from tail', 'Tanwee',), to=clientList[0]["obj"])
+   		output("Current replica", id, isHead, isTail)
+   	else:
+   		for each in replicaList:
+   			if(each["id"] == id+1):
+   				output("Sending msg to next replica -", each)
+   				send(('MSG FROM Previous replica',), to=each["obj"])
 
    def run():
-   	output("Running Replica - ", id)
+   	output("Running Replica - ", id, isHead, isTail)
    	await(flag == True)
    	sendRequest()
