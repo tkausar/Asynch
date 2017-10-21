@@ -1,31 +1,68 @@
 class Replica(process):
-   def setup(id,flag,replicaList,clientList,isHead,isTail):
-        output("Replica ",id,"setup done", isHead, isTail)
+   def setup(replicaId,isHead,isTail):
+   	self.slotnumber = 0
+   	self.history = []
+   	self.cacheDict = []
+   	self.replicaList = []
+   	self.clientList = []
+   	self.map = []
+   	self.setupFlag = False
+   	output("Replica ",replicaId,"setup done")
 
-   # msg from olympus 
-   def receive(msg=(replica,client,)):
-   	replicaList = replica
-   	clientList = client
-   	output(replicaList , clientList)
-   	flag = True
+   #Msg from olympus 
+   def receive(msg=('setupReplica',replicaList,clientList,)):
+   	self.replicaList = replicaList
+   	self.clientList = clientList
+   	#output(replicaList , clientList)
 
-   #msg from client/ replica
-   def receive(msg=(str,)):
-   	output(str)
+   #msg from replica
+   def receive(msg=('shuttlefromReplica',shuttle,operation,), from_=p):
+   	#output(shuttle)
+   	output("Received operation from previous replica", operation, p)
+   	sendRequest(operation, shuttle)
 
-   def sendRequest():
+   #msg from client
+   def receive(msg=('Request',request,)):
+   	output("Request from client", request)
+   	if(isHead == True):
+   		self.slotnumber += 1
+   		shuttle = []
+   		op = processRequest(request["operation"])
+  		createOrderProof(request)
+   		createResultProof(request)
+   		sendRequest(request["operation"],shuttle)
+   	else:
+   		output("Retransmission")
+
+   def createOrderProof(request):
+   	
+   def processRequest(operation):
+   	output(operation)
+   	index = operation.index("(")
+   	operationType = operation[0:index]
+   	if(operationType == "put"):
+   		output("put")
+   	elif(operationType == "append"):
+   		output("append")
+   	elif(operationType == "slice"):
+   		output("slice")
+   	elif(operationType == "get"):
+    		output("get")
+   	return op
+   	
+   def sendRequest(operation,shuttle):
    	if (isTail == True):
    		output("sending msg to client")
    		output(clientList[0]["obj"]);
-   		send(('MSG from tail', 'Tanwee',), to=clientList[0]["obj"])
-   		output("Current replica", id, isHead, isTail)
+   		send(('Result','MSG from tail', 'Tanwee',), to=self.clientList[0]["obj"])
    	else:
-   		for each in replicaList:
-   			if(each["id"] == id+1):
-   				output("Sending msg to next replica -", each)
-   				send(('MSG FROM Previous replica',), to=each["obj"])
+   		for each in self.replicaList:
+   			if(each["id"] == replicaId+1):
+   				output("Sending msg to next replica -", each, operation)
+   				#shuttle.append(operation)
+   				send(('shuttlefromReplica',shuttle,operation,), to=each["obj"])
 
    def run():
-   	output("Running Replica - ", id, isHead, isTail)
-   	await(flag == True)
-   	sendRequest()
+   	output("Running Replica - ", replicaId, isHead, isTail)
+   	await(self.setupFlag == True)
+   	#sendRequest()

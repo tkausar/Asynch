@@ -1,22 +1,48 @@
 class Client(process):
-   def setup(id,flag,replicaList):
-   	output("Client ",id,"setup done")
+   def setup(clientId,workloadList):
+   	self.requestSequenceList = []
+   	self.replicaList = []
+   	self.setupFlag = False
+   	self.successflag = False
+   	self.seqNo = 0
+  	# Creating a list of operations.
+   	createRequestSequenceList(workloadList)
+   	output("Client ", clientId, "setup done")
 
+   def createRequestSequenceList(workloadList):
+   	#if pseudorandom 
+   	if 'pseudorandom' in workloadList:
+   		output("I am pseudorandom")
+		#handle this
+   	else:
+   		#put inidvidual requests in a list
+   		self.requestSequenceList = workloadList.split(';')
+   		#output(self.requestSequenceList)
+   
    #msg from olympus
-   def receive(msg=(replica,)):
-   	replicaList = replica
-   	flag = True
+   def receive(msg=('setupClient',replica,)):
+   	self.replicaList = replica
+   	self.setupFlag = True
 
    #msg from tail replica
-   def receive(msg=(str,result,)):
+   def receive(msg=('Result',str,result,)):
+   	self.successflag = True
    	output(str, result)
 
    def sendRequest():
-   	output("Sending msg to head replica", replicaList[0])
-   	send(('MSG FROM CLIENT',), to=replicaList[0]["obj"])
+   	for operation in self.requestSequenceList:
+   		output("Sending msg to head replica", self.replicaList[0], operation)
+   		self.seqNo += 1
+   		request = {}
+   		request["seqNo"] = self.seqNo
+   		request["operation"] = operation
+   		request["clientId"] = clientId
+   		self.successflag = False 
+   		send(('Request',request,), to=self.replicaList[0]["obj"])
+   		await(self.successflag == True)
 
    def run():
    	output("Running client Id", id)
-   	await(flag == True)
+   	await(self.setupFlag == True)
    	sendRequest()
-   	await(flag == False)
+   	#await(self.flag == False)

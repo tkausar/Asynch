@@ -9,11 +9,11 @@ class Olympus(process):
   	numberOfReplica = (2*t) + 1;
   	for counter in range(1,numberOfReplica+1):
   		if(counter == 1):
-  			r = new(Replica.Replica, args=(counter, False, [],[],True, False), at='node2')
+  			r = new(Replica.Replica, args=(counter, True, False), at='node2')
   		elif (counter == numberOfReplica):
-  			 r = new(Replica.Replica, args=(counter, False, [],[], False, True), at='node2')
+  			 r = new(Replica.Replica, args=(counter, False, True), at='node2')
   		else:
-  			 r = new(Replica.Replica, args=(counter, False, [],[], False, False), at='node2')
+  			 r = new(Replica.Replica, args=(counter, False, False), at='node2')
   		replica = {}
   		replica["id"] = counter
   		replica["obj"] = r
@@ -22,7 +22,8 @@ class Olympus(process):
 
   def getClientList(count):
   	for counter in range(1,count+1):
-  		c = new(Client.Client, args=(counter, False, []), at='node3')
+  		workloadKey = 'workload[' + str(counter-1) + ']'
+  		c = new(Client.Client, args=(counter, config[workloadKey]), at='node3')
   		client = {}
   		client["id"] = counter
   		client["obj"] = c
@@ -33,13 +34,13 @@ class Olympus(process):
   	output("Sending Replica list to client")
   	for each in clientList:
   		output("Sending replica to ", each["obj"])
-  		send((replicaList,), to=each["obj"])
+  		send(('setupClient',replicaList,), to=each["obj"])
 
   def sendReplicaListToReplica():
   	output("Sending Replica list to all replica")
   	for each in replicaList:
   		output("Sending replica to ", each["obj"])
-  		send((replicaList,clientList,), to=each["obj"])
+  		send(('setupReplica',replicaList,clientList,), to=each["obj"])
 
   def setup(config):
   	output("Setting up replica")
