@@ -5,7 +5,7 @@ class Replica(process):
    	self.cacheDict = []
    	self.replicaList = []
    	self.clientList = []
-   	self.map = []
+   	self.db = {}
    	self.setupFlag = False
    	output("Replica ",replicaId,"setup done")
 
@@ -15,54 +15,118 @@ class Replica(process):
    	self.clientList = clientList
    	#output(replicaList , clientList)
 
+   def receive(msg=('ResultShuttle',resultProof)):
+   	self.cacheDict.append(resultProof)
+   	if(isHead == False):
+   		send(('ResultShuttle',resultProof,), to=self.replicaList[replicaId-2]["obj"])
+   	
    #msg from replica
-   def receive(msg=('shuttlefromReplica',shuttle,operation,), from_=p):
-   	#output(shuttle)
-   	output("Received operation from previous replica", operation, p)
-   	sendRequest(operation, shuttle)
+   def receive(msg=('shuttlefromReplica',shuttle,request,slotnumber,), from_=p):
+   	result = processRequest(request["operation"])
+   	shuttle["oproof"]["orderStatement"].append(createOdrerStatement(slotnumber,request["seqNo"]))
+   	shuttle["rproof"]["resultStatement"].append(createResultStatement(slotnumber,request["seqNo"],result))
+   	#output(shuttle)	
+   	sendRequest(request,shuttle,slotnumber)
 
    #msg from client
    def receive(msg=('Request',request,)):
    	output("Request from client", request)
    	if(isHead == True):
    		self.slotnumber += 1
-   		shuttle = []
-   		op = processRequest(request["operation"])
-  		createOrderProof(request)
-   		createResultProof(request)
-   		sendRequest(request["operation"],shuttle)
+   		shuttle = {}
+   		result = processRequest(request["operation"])
+   		oproof = createOrderProof(request, self.slotnumber)
+   		rproof = createResultProof(request, self.slotnumber, result)
+   		oproof["orderStatement"].append(createOdrerStatement(self.slotnumber,request["seqNo"]))
+   		rproof["resultStatement"].append(createResultStatement(self.slotnumber, request["seqNo"],result))
+   		shuttle["oproof"] = oproof
+   		shuttle["rproof"] = rproof
+   		#output(shuttle)
+   		sendRequest(request,shuttle,self.slotnumber)
    	else:
    		output("Retransmission")
 
-   def createOrderProof(request):
-   	
+   def createOrderProof(request,slotNumber):
+   	proof = {}
+   	proof["Type"] = "order"
+   	proof["sequenceNumber"] = request["seqNo"]
+   	proof["slotNumber"] = slotNumber
+   	proof["clientId"] = request["clientId"]
+   	proof["replicaId"] = replicaId
+   	proof["orderStatement"] = []
+   	return proof
+
+   def createResultProof(request,slotNumber,result):
+   	proof = {}
+   	proof["Type"] = "result"
+   	proof["sequenceNumber"] = request["seqNo"]
+   	proof["slotNumber"] = slotNumber
+   	proof["clientId"] = request["clientId"]
+   	proof["resultStatement"] = []
+   	proof["result"] = result
+   	return proof
+
+   def createOdrerStatement(slotnumber, sequenceNumber):
+   	order = {}
+   	order["slotNumber"] = slotnumber
+   	order["sequenceNumber"] = sequenceNumber
+   	return order
+
+   def createResultStatement(slotnumber, sequenceNumber, value):
+   	order = {}
+   	order["slotNumber"] = slotnumber
+   	order["sequenceNumber"] = sequenceNumber
+   	order["value"] = value
+   	return order
+
    def processRequest(operation):
-   	output(operation)
+   	#output("Inside processReq",operation)
    	index = operation.index("(")
    	operationType = operation[0:index]
+   	rest = operation[index+1:len(operation)-1]
+   	operands = rest.split("'")
+   	#output("operands are",operands)
    	if(operationType == "put"):
-   		output("put")
+   		#output(operands[1])
+   		self.db[operands[1]] = operands[3]
+   		print(self.db)
+   		return self.db[operands[1]]
    	elif(operationType == "append"):
-   		output("append")
+   		#output("append")
+   		if operands[1] not in self.db:
+   			return "Fail"
+   		else:
+   			db[operands[1]] = db[operands[1]] + operands[3]
+   			print(self.db)
+   			return db[operands[1]]
    	elif(operationType == "slice"):
-   		output("slice")
+   		#output("slice")
+   		sliceRange=operands[3].split(":")
+   		if operands[1] not in self.map:
+   			return "Fail"
+   		else:
+   			db[operands[1]]=db[operands[1]][sliceRange[0]:sliceRange[1]]
+   			print(self.db)
+   			return db[operands[1]]
    	elif(operationType == "get"):
-    		output("get")
-   	return op
-   	
-   def sendRequest(operation,shuttle):
+   		#output("get")
+   		#print("get ka answer",self.db[rest])
+   		if operands[1] in self.db:
+   			return self.db[operands[1]]
+   		else:
+   			return "" #returning empty string if key is not present
+
+   def sendRequest(request,shuttle,slotnumber):
    	if (isTail == True):
-   		output("sending msg to client")
-   		output(clientList[0]["obj"]);
-   		send(('Result','MSG from tail', 'Tanwee',), to=self.clientList[0]["obj"])
+   		output("Sending Result to client")
+   		send(('Result', shuttle["rproof"], shuttle["rproof"]["result"],), to=self.clientList[request["clientId"]-1]["obj"])
+   		send(('ResultShuttle', shuttle["rproof"],), to=self.replicaList[replicaId-2]["obj"])
    	else:
    		for each in self.replicaList:
    			if(each["id"] == replicaId+1):
-   				output("Sending msg to next replica -", each, operation)
-   				#shuttle.append(operation)
-   				send(('shuttlefromReplica',shuttle,operation,), to=each["obj"])
+   				output("Sending msg to next replica -",request)
+   				send(('shuttlefromReplica',shuttle,request,slotnumber,), to=each["obj"])
 
    def run():
-   	output("Running Replica - ", replicaId, isHead, isTail)
+   	output("Running Replica ", replicaId)
    	await(self.setupFlag == True)
-   	#sendRequest()

@@ -25,9 +25,10 @@ class Client(process):
    	self.setupFlag = True
 
    #msg from tail replica
-   def receive(msg=('Result',str,result,)):
+   def receive(msg=('Result',resultproof,result,)):
    	self.successflag = True
-   	output(str, result)
+   	#output(resultproof)
+   	output(result)
 
    def sendRequest():
    	for operation in self.requestSequenceList:
@@ -42,7 +43,6 @@ class Client(process):
    		await(self.successflag == True)
 
    def run():
-   	output("Running client Id", id)
+   	output("Running client Id", clientId)
    	await(self.setupFlag == True)
    	sendRequest()
-   	#await(self.flag == False)
