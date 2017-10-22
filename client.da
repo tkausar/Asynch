@@ -13,17 +13,19 @@ class Client(process):
    	self.seqNo = 0
    	self.verifyKeyHexClientList= {}
    	self.verifyKeyHexReplicaList= {}
+   	self.localDictionary = {}
+   	self.expectedResultList = []
   	# Creating a list of operations.
    	createRequestSequenceList(workloadList)
    	self.f.write("\nClient - " + str(clientId) + " setup completed")
 
    def generatePseudoRequests(seedVal,n):
-   	pseudoWorkload=["put('bournvita','beverage')","append('bournvita',' not tasty')","get('bournvita')","put('aloevera','10 dollars')","append('aloevera',' discount')","slice('aloevera','0:4')","get('aloevera')"]
+   	pseudoWorkload=["put('a','100')","put('b','200')","put('c','300')","append('a',' zz')","append('b',' xx')","append('c','yy')","get('a')","get('b')","get('c')","put('d','800')","append('d',' vvv')","append('d',' ttt')","append('d',' qqq')","slice('a','0:4')","get('a')","put('e','star')","put('f','6000')","put('g','9000')","append('a',' h')","get('f')","put('g','666')","slice('g',' lol')","slice('b','0:4')","get('g')"]
    	random.seed(seedVal)
    	pseudoList=[]
    	for i in range(n):
    		index = random.randint(1, n)
-   		pseudoList.append(pseudoWorkload[index])
+   		pseudoList.append(pseudoWorkload[index%len(pseudoWorkload)])
    	return pseudoList
 
    def createRequestSequenceList(workloadList):
@@ -37,6 +39,7 @@ class Client(process):
    	else:
    		#put inidvidual requests in a list
    		self.requestSequenceList = workloadList.split(';')
+   		self.expectedResultList = config["expectedResult["+str(clientId-1)+"]"].split(';')
    		#self.f.write(self.requestSequenceList)
 
    #msg from olympus
@@ -53,11 +56,16 @@ class Client(process):
    	self.f.write("\n\tReceived result:" + result + " from replica : " +  str(p))
    	self.f.write("\n\tChecking proof of misbehiour by checking signatures and hashes in result proof")
    	checkProofOfmisBehaviour(resultProof, result)
+   	#test if response is expected result
+   	if result == self.localDictionary[resultProof["sequenceNumber"]]:
+   		self.f.write("\n\tGot Expected Result")
+   	else:
+   		self.f.write("\n\tNot an expected result. Test Case Failed.")
 
    def decryptReplicaRequest(signedStatement,replicaId):
-        verify_key = nacl.signing.VerifyKey(self.verifyKeyHexReplicaList[replicaId], encoder=nacl.encoding.HexEncoder)
-        data = verify_key.verify(signedStatement)
-        return json.loads(data.decode('utf-8'))
+   	verify_key = nacl.signing.VerifyKey(self.verifyKeyHexReplicaList[replicaId], encoder=nacl.encoding.HexEncoder)
+   	data = verify_key.verify(signedStatement)
+   	return json.loads(data.decode('utf-8'))
 
    def checkProofOfmisBehaviour(resultProof, result):
    	resultStatement = resultProof["resultStatement"]
@@ -75,6 +83,7 @@ class Client(process):
    	for replica in self.replicaList:
    		data = json.dumps(request)
    		signedRequest = signingKey.sign(bytes(data,'utf-8'))
+   		self.f.write("\n\t\tSending signed retransmit request to replica : " + str(replica["obj"]))
    		send(('Retransmit',signedRequest,clientId), to=replica["obj"])
    	if await(self.successflag == True):
    		self.f.write("\n\tReceived response for retransmission request for operation : "  + request["operation"])
@@ -86,6 +95,7 @@ class Client(process):
    		self.f.write("\n\nSending request " + operation + " to head replica " + str(self.replicaList[0]["obj"]))
    		self.seqNo += 1
    		request = {}
+   		self.localDictionary[self.seqNo] = self.expectedResultList[self.seqNo-1]
    		request["seqNo"] = self.seqNo
    		request["operation"] = operation
    		request["clientId"] = clientId
