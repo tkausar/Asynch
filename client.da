@@ -1,11 +1,17 @@
+import nacl.encoding
+import nacl.signing
+import nacl.hash
+import json
 class Client(process):
-   def setup(clientId,workloadList):
+   def setup(clientId,workloadList,signingKey):
    	self.requestSequenceList = []
    	self.replicaList = []
    	self.setupFlag = False
    	self.successflag = False
    	self.seqNo = 0
-  	# Creating a list of operations.
+   	self.verifyKeyHexClientList= {}
+   	self.verifyKeyHexReplicaList= {}
+  	#Creating a list of operations.
    	createRequestSequenceList(workloadList)
    	output("Client ", clientId, "setup done")
 
@@ -20,26 +26,44 @@ class Client(process):
    		#output(self.requestSequenceList)
    
    #msg from olympus
-   def receive(msg=('setupClient',replica,)):
+   def receive(msg=('setupClient',replica,verifyKeyHexClientList,verifyKeyHexReplicaList,)):
    	self.replicaList = replica
    	self.setupFlag = True
+   	self.verifyKeyHexClientList=verifyKeyHexClientList
+   	self.verifyKeyHexReplicaList=verifyKeyHexReplicaList
 
    #msg from tail replica
-   def receive(msg=('Result',resultproof,result,)):
+   def receive(msg=('Result',resultProof,result)):
    	self.successflag = True
-   	#output(resultproof)
+   	checkProofOfmisBehaviour(resultProof, result)
    	output(result)
 
+   def decryptReplicaRequest(signedStatement,replicaId):
+        verify_key = nacl.signing.VerifyKey(self.verifyKeyHexReplicaList[replicaId], encoder=nacl.encoding.HexEncoder)
+        data = verify_key.verify(signedStatement)
+        return json.loads(data.decode('utf-8'))
+
+   def checkProofOfmisBehaviour(resultProof, result):
+   	resultStatement = resultProof["resultStatement"]
+   	counter = 1
+   	for r in resultStatement:
+   		statement = decryptReplicaRequest(r,counter)
+   		if(result != statement["value"]):
+   			output("Proof of misbehaviour")
+   		counter +=1
+   	
    def sendRequest():
    	for operation in self.requestSequenceList:
-   		output("Sending msg to head replica", self.replicaList[0], operation)
+   		output("Sending request to head replica", self.replicaList[0], operation)
    		self.seqNo += 1
    		request = {}
    		request["seqNo"] = self.seqNo
    		request["operation"] = operation
    		request["clientId"] = clientId
-   		self.successflag = False 
-   		send(('Request',request,), to=self.replicaList[0]["obj"])
+   		self.successflag = False
+   		data = json.dumps(request)
+   		signedRequest = signingKey.sign(bytes(data,'utf-8')) 
+   		send(('Request',signedRequest,clientId), to=self.replicaList[0]["obj"])
    		await(self.successflag == True)
 
    def run():
