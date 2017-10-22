@@ -1,4 +1,5 @@
 import sys
+import os
 Olympus = import_da('olympus')
 def configParser(fileName,config):
 	with open(fileName,'r') as f:
@@ -12,15 +13,13 @@ def configParser(fileName,config):
 	#print(config)
 	
 def main():
-	print("Starting init.da")
+	print("Reading Config file...")
 	fileName = sys.argv[1]
 	config={}
 	configParser(fileName,config)
-	olyInstance = new(Olympus.Olympus, args=(config,),at='node1')
+	logFilePath = 'logs/' + config["test_case_name"] + "/"
+	print("Creating a log Directory")
+	if not os.path.exists(logFilePath):
+		os.makedirs(logFilePath,mode=0o777)
+	olyInstance = new(Olympus.Olympus, args=(config,logFilePath,),at='node1')
 	start(olyInstance)
-	
-
-
-
-
-

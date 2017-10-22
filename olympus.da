@@ -6,6 +6,8 @@ Client = import_da('client')
 replicaList = []
 clientList = []
 class Olympus(process):
+
+  # To generate Signed key fro all replica and client
   def generateSignKey():
   	#returns signing_key and verify_key_hex
   	signing_key = nacl.signing.SigningKey.generate() #Generating a new random signing key for client	
@@ -21,12 +23,11 @@ class Olympus(process):
   	for counter in range(1,numberOfReplica+1):
   		keyPair = generateSignKey()
   		if(counter == 1):
-  			r = new(Replica.Replica, args=(counter, True, False,keyPair["signing_key"],), at='node2')
+  			r = new(Replica.Replica, args=(counter, True, False,keyPair["signing_key"],config,logFilePath,), at='node2')
   		elif (counter == numberOfReplica):
-  			 r = new(Replica.Replica, args=(counter, False, True, keyPair["signing_key"],), at='node2')
+  			 r = new(Replica.Replica, args=(counter, False, True, keyPair["signing_key"],config,logFilePath,), at='node2')
   		else:
-  			 r = new(Replica.Replica, args=(counter, False, False, keyPair["signing_key"],), at='node2')
-  		output(type(r))
+  			 r = new(Replica.Replica, args=(counter, False, False, keyPair["signing_key"],config,logFilePath,), at='node2')
   		self.verifyKeyHexReplicaList[counter] = keyPair["verify_key_hex"]
   		replica = {}
   		replica["id"] = counter
@@ -38,7 +39,7 @@ class Olympus(process):
   	for counter in range(1,count+1):
   		keyPair = generateSignKey()
   		workloadKey = 'workload[' + str(counter-1) + ']'
-  		c = new(Client.Client, args=(counter, config[workloadKey], keyPair["signing_key"],), at='node3')
+  		c = new(Client.Client, args=(counter, config[workloadKey], keyPair["signing_key"],config,logFilePath,), at='node3')
   		# Creating a client and signature mapping
   		self.verifyKeyHexClientList[counter]= keyPair["verify_key_hex"]
   		client = {}
@@ -48,24 +49,33 @@ class Olympus(process):
   	return clientList;
 
   def sendReplicaListToClient():
-  	output("Sending Replica list to all client")
+  	self.f.write("\nSending list of replica and public key to all client")
   	for each in clientList:
-  		output("Sending replica to ", each["obj"])
+  		self.f.write("\nSending list of replica and public key to client - " +  str(each["obj"]))
   		send(('setupClient',replicaList,self.verifyKeyHexClientList,self.verifyKeyHexReplicaList,), to=each["obj"])
 
   def sendReplicaListToReplica():
-  	output("Sending Replica list to all replica")
+  	self.f.write("\nSending list of clients, replica and public keys to all replica")
   	for each in replicaList:
-  		output("Sending replica to ", each["obj"])
+  		self.f.write("\nSending list of replica and public key to replica - " +  str(each["obj"]))
   		send(('setupReplica',replicaList,clientList,self.verifyKeyHexClientList,self.verifyKeyHexReplicaList,), to=each["obj"])
 
-  def setup(config):
-  	self.verifyKeyHexClientList = {} #list of clientId-Key dictionary pairs
+  def setup(config,logFilePath):
+	# Open file pointer for log file
+  	self.f = open(logFilePath + 'olympus.log','w')
+  	self.f.write("\nSetting up olympus....")
+
+	#list of clientId-Key dictionary pairs
+  	self.verifyKeyHexClientList = {}
   	self.verifyKeyHexReplicaList = {}
-  	output("Setting up all Replica")
+
+  	self.f.write("\nSetting up all Replica...")
   	self.replicaList = getReplicaList(config["t"])
-  	output("Setting up all client")
+
+  	self.f.write("\nSetting up all client....")
   	self.clientList = getClientList(config["num_client"])
+
+  	self.f.write("\nSetting up all private and public keys....")
   	sendReplicaListToClient()
   	sendReplicaListToReplica()
  
@@ -74,4 +84,5 @@ class Olympus(process):
                 start(each["obj"])
   	for each in self.replicaList:
   		start(each["obj"])
-  	output("Olympus is started.")
+  	self.f.write("\nOlympus is started.")
+  	self.f.close()
