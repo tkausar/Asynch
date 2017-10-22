@@ -14,6 +14,7 @@ class Client(process):
    	self.verifyKeyHexClientList= {}
    	self.verifyKeyHexReplicaList= {}
    	self.localDictionary = {}
+   	self.isPseudorandom = False
    	self.expectedResultList = []
   	# Creating a list of operations.
    	createRequestSequenceList(workloadList)
@@ -24,13 +25,14 @@ class Client(process):
    	random.seed(seedVal)
    	pseudoList=[]
    	for i in range(n):
-   		index = random.randint(1, n)
+   		index = random.randint(1, 100)
    		pseudoList.append(pseudoWorkload[index%len(pseudoWorkload)])
    	return pseudoList
 
    def createRequestSequenceList(workloadList):
    	#if pseudorandom
    	if 'pseudorandom' in workloadList:
+   		self.isPseudorandom = True
    		self.f.write("\nGenerating pseudrorandom requests")
    		part1=workloadList.split('(')
    		part2=part1[1][0:len(part1[1])-1]
@@ -56,11 +58,12 @@ class Client(process):
    	self.f.write("\n\tReceived result:" + result + " from replica : " +  str(p))
    	self.f.write("\n\tChecking proof of misbehiour by checking signatures and hashes in result proof")
    	checkProofOfmisBehaviour(resultProof, result)
-   	#test if response is expected result
-   	if result == self.localDictionary[resultProof["sequenceNumber"]]:
-   		self.f.write("\n\tGot Expected Result")
-   	else:
-   		self.f.write("\n\tNot an expected result. Test Case Failed.")
+   	if (self.isPseudorandom == False):
+   		#test if response is expected result
+   		if result == self.localDictionary[resultProof["sequenceNumber"]]:
+   			self.f.write("\n\tGot Expected Result")
+   		else:
+   			self.f.write("\n\tNot an expected result. Test Case Failed.")
 
    def decryptReplicaRequest(signedStatement,replicaId):
    	verify_key = nacl.signing.VerifyKey(self.verifyKeyHexReplicaList[replicaId], encoder=nacl.encoding.HexEncoder)
@@ -87,7 +90,7 @@ class Client(process):
    		send(('Retransmit',signedRequest,clientId), to=replica["obj"])
    	if await(self.successflag == True):
    		self.f.write("\n\tReceived response for retransmission request for operation : "  + request["operation"])
-   	elif timeout(3000):
+   	elif timeout(float(config["client_timeout"])):
    		self.f.write("\n\tTimeout for retransmission request for operation : " + request["operation"])
 
    def sendRequest():
@@ -95,7 +98,8 @@ class Client(process):
    		self.f.write("\n\nSending request " + operation + " to head replica " + str(self.replicaList[0]["obj"]))
    		self.seqNo += 1
    		request = {}
-   		self.localDictionary[self.seqNo] = self.expectedResultList[self.seqNo-1]
+   		if (self.isPseudorandom == False):
+   			self.localDictionary[self.seqNo] = self.expectedResultList[self.seqNo-1]
    		request["seqNo"] = self.seqNo
    		request["operation"] = operation
    		request["clientId"] = clientId

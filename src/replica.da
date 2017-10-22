@@ -113,7 +113,7 @@ class Replica(process):
    		self.f.write("\nAwaiting for result shuttle...")
    		if await(self.resultShuttleFlag == True):
    			self.f.write("\nGot a result shuttle for operation " + request["operation"])
-   		elif timeout(config["nonhead_timeout"]):
+   		elif timeout(float(config["nonhead_timeout"])):
    			self.f.write("\nNon-head replica timeout for operation : " + request["operation"])
    			
 
@@ -127,7 +127,7 @@ class Replica(process):
    		self.f.write("\nAwaiting for result shuttle...")
    		if await(self.resultShuttleFlag == True):
    			self.f.write("\nGot a result shuttle for operation " + request["operation"])
-   		elif timeout(config["head_timeout"]):
+   		elif timeout(float(config["head_timeout"])):
    			self.f.write("\nHead replica timeout for operation : " + request["operation"])
    	else:
    		self.f.write("\nCan not find retransmitted request in head replica history.So recreating a new request....")
