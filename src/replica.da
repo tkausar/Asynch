@@ -1,0 +1,296 @@
+import nacl.encoding
+import nacl.signing
+import nacl.hash
+import json
+from nacl.bindings.utils import sodium_memcmp
+class Replica(process):
+   def setup(replicaId,isHead,isTail,signingKey,config,logFilePath):
+   	self.f = open(logFilePath + 'replica_'+ str(replicaId) + '.log','w')
+   	self.slotnumber = 0
+   	self.history = []
+   	self.cacheDict = []
+   	self.replicaList = []
+   	self.clientList = []
+   	self.db = {}
+   	self.resultShuttleFlag = False
+   	self.setupFlag = False
+   	self.responseFlag = False
+   	self.verifyKeyHexClientList= {}
+   	self.verifyKeyHexReplicaList= {}
+   	self.f.write("\nReplica " + str(replicaId) +" setup done")
+
+   # Message from olympus to intialize all variables.
+   def receive(msg=('setupReplica',replicaList,clientList,verifyKeyHexClientList,verifyKeyHexReplicaList,)):
+   	self.replicaList = replicaList
+   	self.clientList = clientList
+   	self.verifyKeyHexClientList=verifyKeyHexClientList
+   	self.verifyKeyHexReplicaList=verifyKeyHexReplicaList
+   	self.setupFlag = True
+   	self.f.write("\nReceived message from Olympus : \nReplicaList "+ str(replicaList)+ "\nclientList: "+ str(clientList))
+
+   def receive(msg=('ResultShuttle',resultProof), from_=p):
+   	self.f.write("\n\nReceived result shuttle from : " + str(p) + " for operation : " + resultProof["operation"])
+   	self.f.write("\nAppending resultShulttle to cache of replica")
+   	self.cacheDict.append(resultProof)
+   	self.resultShuttleFlag = True
+   	if(isHead == False):
+   		self.f.write("\nSending resultShuttle to previous replica : "+ str(self.replicaList[replicaId-2]["obj"]) + "\n")
+   		send(('ResultShuttle',resultProof,), to=self.replicaList[replicaId-2]["obj"])
+
+   # Message from replica
+   def receive(msg=('shuttlefromReplica',shuttle,request,slotnumber,), from_=p):
+   	self.f.write("\n\nReceived shuttle from previous replica : "+ str(p) + " for operation : " + request["operation"])
+   	self.f.write("\nChecked history for slot number : " + str(slotnumber) + " and " + "sequence number : " + str(request["seqNo"] ))
+   	if(checkHistory(slotnumber, request["seqNo"],request["clientId"]) == False):
+   		self.f.write("\nChecked validity of order statement")
+   		if( checkValidityOfOrderStatement(shuttle["oproof"]) == True):
+   			self.f.write("\nProcessing request: " + request["operation"])
+   			result = processRequest(request["operation"])
+   			self.f.write("\nChecked validity of result statement")
+   			if( checkResultValidity(shuttle["rproof"], result) == True ):
+   				createHistoryTuple(slotnumber,request["seqNo"],request["clientId"])
+   				shuttle["oproof"]["orderStatement"].append(createOdrerStatement(slotnumber,request["seqNo"]))
+   				shuttle["rproof"]["resultStatement"].append(createResultStatement(slotnumber,request["seqNo"],result))
+   				self.f.write("\nAppended orderProof and resultproof to shuttle")
+   				self.f.write("\nCurrent Database : " + str(self.db))
+   				sendRequest(request,shuttle,slotnumber)
+
+   # Check result validity
+   def checkResultValidity(resultProof, result):
+   	counter = 1
+   	for resultState in resultProof["resultStatement"]:
+   		order = decryptReplicaRequest(resultState,counter)
+   		if(order["value"] != result):
+   			return False
+   		counter += 1
+   	return True
+
+   # create a hash of result.
+   def createHash(value):
+   	HASHER = nacl.hash.sha256
+   	msg = bytes(value,'utf-8')
+   	digest = HASHER(msg, encoder=nacl.encoding.HexEncoder)
+	#now send msg and digest to the user
+   	encodedMsg = nacl.encoding.HexEncoder.encode(msg)
+   	return encodedMsg,digest
+
+   # Decrypt signed order statement of all previos replica and check validity
+   def checkValidityOfOrderStatement(orderProof):
+   	counter = 1
+   	for signedOrder in orderProof["orderStatement"]:
+   		order = decryptReplicaRequest(signedOrder,counter)
+   		if( order["slotNumber"] != orderProof["slotNumber"] and order["sequenceNumber"] != orderProof["slotNumber"]):
+   			return False
+   		counter += 1
+   	return True
+
+   # Decrypt order/ result statement present inside shuttle
+   def decryptReplicaRequest(signedStatement,replicaId):
+   	verify_key = nacl.signing.VerifyKey(self.verifyKeyHexReplicaList[replicaId], encoder=nacl.encoding.HexEncoder)
+   	data = verify_key.verify(signedStatement)
+   	return json.loads(data.decode('utf-8'))
+
+   def decryptClientRequest(signedRequest,clientId):
+   	verify_key = nacl.signing.VerifyKey(self.verifyKeyHexClientList[clientId], encoder=nacl.encoding.HexEncoder)
+   	data = verify_key.verify(signedRequest)
+   	return json.loads(data.decode('utf-8'))
+
+   # Retransmission
+   def receive(msg=('Retransmit',signedRequest,clientId,),from_=client):
+   	request = decryptClientRequest(signedRequest,clientId)
+   	self.f.write("\n\nReceived retransmit signed request from client :"+ str(client))
+   	self.f.write("\nDecrypted request: "+ request["operation"])
+   	isFound = False
+   	self.f.write("\nChecking in replica's cache...")
+   	for resultProof in self.cacheDict:
+   		if (resultProof["sequenceNumber"] == request["seqNo"]  and resultProof["clientId"] == clientId):
+   			self.f.write('\nFound operation: "+ request["operation"] +" in cache')
+   			send(('Result', resultProof, resultProof["result"],), to=client)
+   			isFound = True
+   	if(isFound == False and isHead == False):
+   		self.f.write("Can't find in entry in cache of replica. Retransmit request To Head for operation :" + request["operation"])
+   		send(('RetransmitToHead',signedRequest,clientId,), to=self.replicaList[0]["obj"])
+   		self.f.write("\nAwaiting for result shuttle...")
+   		if await(self.resultShuttleFlag == True):
+   			self.f.write("\nGot a result shuttle for operation " + request["operation"])
+   		elif timeout(config["nonhead_timeout"]):
+   			self.f.write("\nNon-head replica timeout for operation : " + request["operation"])
+   			
+
+   # Msg from replica from timeout to head replica
+   def receive(msg=('RetransmitToHead',signedRequest,clientId,), from_=replica):
+   	request = decryptClientRequest(signedRequest,clientId)
+   	self.f.write("\n\nReceived retransmit signed request from replica :"+ str(replica))
+   	self.f.write("\nDecrypted request: "+ request["operation"])
+   	slotNumber = checkHistoryClient(request["seqNo"],request["clientId"])
+   	if(slotNumber != -1):
+   		self.f.write("\nAwaiting for result shuttle...")
+   		if await(self.resultShuttleFlag == True):
+   			self.f.write("\nGot a result shuttle for operation " + request["operation"])
+   		elif timeout(config["head_timeout"]):
+   			self.f.write("\nHead replica timeout for operation : " + request["operation"])
+   	else:
+   		self.f.write("\nCan not find retransmitted request in head replica history.So recreating a new request....")
+   		self.slotnumber += 1
+   		shuttle = {}
+   		self.f.write("\nHead Replica: Created slot number " + str(self.slotnumber))
+   		self.f.write("\nProcessing request: " + request["operation"])
+   		result = processRequest(request["operation"])
+   		self.f.write("\nProcessed request result: "+ result)
+   		oproof = createOrderProof(request, self.slotnumber)
+   		rproof = createResultProof(request, self.slotnumber, result)
+   		oproof["orderStatement"].append(createOdrerStatement(self.slotnumber,request["seqNo"]))
+   		self.f.write("\nCreated OrderProof with signed oredrStatement")
+   		rproof["resultStatement"].append(createResultStatement(self.slotnumber, request["seqNo"],result))
+   		self.f.write("\nCreated ResultProof with signed resultStatement")
+   		shuttle["oproof"] = oproof
+   		shuttle["rproof"] = rproof
+   		createHistoryTuple(self.slotnumber,request["seqNo"],request["clientId"])
+   		self.f.write("\nAppended orderProof and resultproof to shuttle")
+   		self.f.write("\nCurrent Database : " + str(self.db))
+   		sendRequest(request,shuttle,self.slotnumber)
+
+   # Message from client
+   def receive(msg=('Request',signedRequest,clientId,),from_=client):
+   	request = decryptClientRequest(signedRequest,clientId)
+   	self.f.write("\n\nReceived signed request from client :"+ str(client))
+   	self.f.write("\nDecrypted request: "+ request["operation"])
+   	if(isHead == True):
+   		self.slotnumber += 1
+   		shuttle = {}
+   		self.f.write("\nHead Replica: Created slot number " + str(self.slotnumber))
+   		self.f.write("\nProcessing request: " + request["operation"])
+   		result = processRequest(request["operation"])
+   		self.f.write("\nProcessed request result: "+ result)
+   		oproof = createOrderProof(request, self.slotnumber)
+   		rproof = createResultProof(request, self.slotnumber, result)
+   		oproof["orderStatement"].append(createOdrerStatement(self.slotnumber,request["seqNo"]))
+   		self.f.write("\nCreated OrderProof with signed oredrStatement")
+   		rproof["resultStatement"].append(createResultStatement(self.slotnumber, request["seqNo"],result))
+   		self.f.write("\nCreated ResultProof with signed resultStatement")
+   		shuttle["oproof"] = oproof
+   		shuttle["rproof"] = rproof
+   		createHistoryTuple(self.slotnumber,request["seqNo"],request["clientId"])
+   		self.f.write("\nAppended orderProof and resultproof to shuttle")
+   		self.f.write("\nCurrent Database : " + str(self.db))
+   		sendRequest(request,shuttle,self.slotnumber)
+
+   def createOrderProof(request,slotNumber):
+   	proof = {}
+   	proof["Type"] = "order"
+   	proof["sequenceNumber"] = request["seqNo"]
+   	proof["slotNumber"] = slotNumber
+   	proof["clientId"] = request["clientId"]
+   	proof["replicaId"] = replicaId
+   	proof["orderStatement"] = []
+   	return proof
+
+   def createResultProof(request,slotNumber,result):
+   	proof = {}
+   	proof["Type"] = "result"
+   	proof["sequenceNumber"] = request["seqNo"]
+   	proof["slotNumber"] = slotNumber
+   	proof["clientId"] = request["clientId"]
+   	proof["replicaId"] = replicaId
+   	proof["operation"] = request["operation"]
+   	proof["resultStatement"] = []
+   	proof["result"] = result
+   	return proof
+
+   def createOdrerStatement(slotnumber, sequenceNumber):
+   	order = {}
+   	order["slotNumber"] = slotnumber
+   	order["sequenceNumber"] = sequenceNumber
+   	return signedData(order)
+
+   def createResultStatement(slotnumber, sequenceNumber, value):
+   	order = {}
+   	order["slotNumber"] = slotnumber
+   	order["sequenceNumber"] = sequenceNumber
+   	order["value"] = value
+   	self.f.write("\nCreating a hash of result")
+   	return signedData(order)
+
+   # Get signed statement
+   def signedData(statement):
+   	signedRequest = signingKey.sign(bytes(json.dumps(statement),'utf-8'))
+   	return signedRequest
+
+   def createHistoryTuple(slotNumber,sequenceNumber,clientId):
+   	h = {}
+   	h["seqNo"] = sequenceNumber
+   	h["slotNumber"] = slotNumber
+   	h["clientId"] = clientId
+   	self.history.append(h)
+   	self.f.write("\nAdded operation to replica's history")
+
+   def checkHistory(slotNumber,sequenceNumber,clientId):
+   	for h in self.history:
+   		if(h["slotNumber"] == slotNumber and h["seqNo"] == sequenceNumber and h["clientId"] == clientId):
+   			return True
+   	return False
+
+   def checkHistoryClient(sequenceNumber,clientId):
+        for h in self.history:
+                if(h["seqNo"] == sequenceNumber and h["clientId"] == clientId):
+                        return h["slotNumber"]
+        return -1
+
+   def processRequest(operation):
+   	#self.f.write("Inside processReq",operation)
+   	index = operation.index("(")
+   	operationType = operation[0:index]
+   	rest = operation[index+1:len(operation)-1]
+   	operands = rest.split("'")
+   	#self.f.write("operands are",operands)
+   	if(operationType == "put"):
+   		#self.f.write(operands[1])
+   		self.db[operands[1]] = operands[3]
+   		#print(self.db)
+   		return "OK"
+   	elif(operationType == "append"):
+   		#self.f.write("append")
+   		if operands[1] not in self.db:
+   			return "Fail"
+   		else:
+   			db[operands[1]] = db[operands[1]] + operands[3]
+   			#print(self.db)
+   			return "OK"
+   	elif(operationType == "slice"):
+   		sliceRange=operands[3].split(":")
+   		if operands[1] not in self.db:
+   			return "Fail"
+   		else:
+   			db[operands[1]]=db[operands[1]][int(sliceRange[0]):int(sliceRange[1])]
+   			#print(self.db)
+   			return "OK"
+   	elif(operationType == "get"):
+   		#self.f.write("get")
+   		#print("get ka answer",self.db[rest])
+   		if operands[1] in self.db:
+   			return self.db[operands[1]]
+   		else:
+   			return "" #returning empty string if key is not present
+
+   def sendRequest(request,shuttle,slotnumber):
+   	if (isTail == True):
+   		self.resultShuttleFlag = True
+   		self.f.write("\nSending ResultProof and result to client : " + str(self.clientList[request["clientId"]-1]["obj"]))
+   		send(('Result', shuttle["rproof"], shuttle["rproof"]["result"],), to=self.clientList[request["clientId"]-1]["obj"])
+   		self.f.write("\nSending Result Shuttle to previous replica : " + str(self.replicaList[replicaId-2]["obj"]))
+   		send(('ResultShuttle', shuttle["rproof"],), to=self.replicaList[replicaId-2]["obj"])
+   	else:
+   		for each in self.replicaList:
+   			if(each["id"] == replicaId+1):
+   				self.f.write("\nSending shuttle to next Replica : " +  str(each["obj"]) + " with request " +  request["operation"])
+   				send(('shuttlefromReplica',shuttle,request,slotnumber,), to=each["obj"])
+
+   def run():
+   	self.f.write("\nRunning Replica " + str(replicaId))
+   	await(self.setupFlag == True)
+   	#output("setupFlag is True")
+   	if await(self.responseFlag == True):
+   		output("Done")
+   	elif timeout(1):
+   		output("Closing log file")
+   		self.f.close()

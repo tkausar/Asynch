@@ -1,0 +1,17 @@
+test_case_name = test3
+# number of failures to tolerate. number of replicas is 2t+1.
+t = 1
+# number of clients
+num_client = 2
+# client timeout, in milliseconds. if timer expires, resend request
+client_timeout = 3000
+# timeout, in milliseconds, for head and non-head servers, respectively:
+head_timeout = 3000
+nonhead_timeout = 3000
+# CLIENT WORKLOAD
+workload[0] = pseudorandom(233,4)
+workload[1] = pseudorandom(100,2)
+workload[2] = pseudorandom(80,3)
+# FAILURE SCENARIO
+failures[0,0] = client_request(2,1), crash()
+failures[1,2] = result_shuttle(0,1),drop(); shuttle(1,3),omit_send()

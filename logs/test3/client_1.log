@@ -1,0 +1,7 @@
+
+Generating pseudrorandom requests
+Client - 1 setup completed
+Running client Id - 1
+Received replica list and public keys from olympus
+
+Sending request put('c','300') to head replica {<Replica:cf002#node2>}

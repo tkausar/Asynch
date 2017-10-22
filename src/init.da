@@ -1,0 +1,25 @@
+import sys
+import os
+Olympus = import_da('olympus')
+def configParser(fileName,config):
+	with open(fileName,'r') as f:
+		for line in f:
+			if line[0] != '#':
+				(key,sep,val) = line.partition('=')
+				# if the line does not contain '=', it is invalid and hence ignored
+				if len(sep) != 0:
+					val = val.strip()
+					config[key.strip()] = int(val) if str.isdecimal(val) else val
+	#print(config)
+	
+def main():
+	print("Reading Config file...")
+	fileName = sys.argv[1]
+	config={}
+	configParser(fileName,config)
+	logFilePath = 'logs/' + config["test_case_name"] + "/"
+	print("Creating a log Directory")
+	if not os.path.exists(logFilePath):
+		os.makedirs(logFilePath,mode=0o777)
+	olyInstance = new(Olympus.Olympus, args=(config,logFilePath,),at='node1')
+	start(olyInstance)

@@ -1,0 +1,118 @@
+import nacl.encoding
+import nacl.signing
+import nacl.hash
+import json
+import random
+class Client(process):
+   def setup(clientId,workloadList,signingKey,config,logFilePath):
+   	self.f = open(logFilePath + 'client_'+ str(clientId) + '.log','w')
+   	self.requestSequenceList = []
+   	self.replicaList = []
+   	self.setupFlag = False
+   	self.successflag = False
+   	self.seqNo = 0
+   	self.verifyKeyHexClientList= {}
+   	self.verifyKeyHexReplicaList= {}
+   	self.localDictionary = {}
+   	self.expectedResultList = []
+  	# Creating a list of operations.
+   	createRequestSequenceList(workloadList)
+   	self.f.write("\nClient - " + str(clientId) + " setup completed")
+
+   def generatePseudoRequests(seedVal,n):
+   	pseudoWorkload=["put('a','100')","put('b','200')","put('c','300')","append('a',' zz')","append('b',' xx')","append('c','yy')","get('a')","get('b')","get('c')","put('d','800')","append('d',' vvv')","append('d',' ttt')","append('d',' qqq')","slice('a','0:4')","get('a')","put('e','star')","put('f','6000')","put('g','9000')","append('a',' h')","get('f')","put('g','666')","slice('g',' lol')","slice('b','0:4')","get('g')"]
+   	random.seed(seedVal)
+   	pseudoList=[]
+   	for i in range(n):
+   		index = random.randint(1, n)
+   		pseudoList.append(pseudoWorkload[index%len(pseudoWorkload)])
+   	return pseudoList
+
+   def createRequestSequenceList(workloadList):
+   	#if pseudorandom
+   	if 'pseudorandom' in workloadList:
+   		self.f.write("\nGenerating pseudrorandom requests")
+   		part1=workloadList.split('(')
+   		part2=part1[1][0:len(part1[1])-1]
+   		seedVal,numOps=part2.split(',')
+   		self.requestSequenceList=generatePseudoRequests(int(seedVal),int(numOps)) 
+   	else:
+   		#put inidvidual requests in a list
+   		self.requestSequenceList = workloadList.split(';')
+   		self.expectedResultList = config["expectedResult["+str(clientId-1)+"]"].split(';')
+   		#self.f.write(self.requestSequenceList)
+
+   #msg from olympus
+   def receive(msg=('setupClient',replica,verifyKeyHexClientList,verifyKeyHexReplicaList,)):
+   	self.f.write("\nReceived replica list and public keys from olympus")
+   	self.replicaList = replica
+   	self.setupFlag = True
+   	self.verifyKeyHexClientList=verifyKeyHexClientList
+   	self.verifyKeyHexReplicaList=verifyKeyHexReplicaList
+
+   #msg from tail replica
+   def receive(msg=('Result',resultProof,result), from_=p):
+   	self.successflag = True
+   	self.f.write("\n\tReceived result:" + result + " from replica : " +  str(p))
+   	self.f.write("\n\tChecking proof of misbehiour by checking signatures and hashes in result proof")
+   	checkProofOfmisBehaviour(resultProof, result)
+   	#test if response is expected result
+   	if result == self.localDictionary[resultProof["sequenceNumber"]]:
+   		self.f.write("\n\tGot Expected Result")
+   	else:
+   		self.f.write("\n\tNot an expected result. Test Case Failed.")
+
+   def decryptReplicaRequest(signedStatement,replicaId):
+   	verify_key = nacl.signing.VerifyKey(self.verifyKeyHexReplicaList[replicaId], encoder=nacl.encoding.HexEncoder)
+   	data = verify_key.verify(signedStatement)
+   	return json.loads(data.decode('utf-8'))
+
+   def checkProofOfmisBehaviour(resultProof, result):
+   	resultStatement = resultProof["resultStatement"]
+   	counter = 1
+   	for r in resultStatement:
+   		statement = decryptReplicaRequest(r,counter)
+   		if(result != statement["value"]):
+   			self.f.write("\n\t Proof of misbehaviour for request " + resultProof["operation"])
+   			return
+   		counter +=1
+   	self.f.write("\n\tChecked all signatures and hashes present in result proof for operation " + resultProof["operation"])
+
+   def retransmitRequest(request):
+   	self.f.write("\n\tSending retransmit request to all replica for operation : " + request["operation"])
+   	for replica in self.replicaList:
+   		data = json.dumps(request)
+   		signedRequest = signingKey.sign(bytes(data,'utf-8'))
+   		self.f.write("\n\t\tSending signed retransmit request to replica : " + str(replica["obj"]))
+   		send(('Retransmit',signedRequest,clientId), to=replica["obj"])
+   	if await(self.successflag == True):
+   		self.f.write("\n\tReceived response for retransmission request for operation : "  + request["operation"])
+   	elif timeout(3000):
+   		self.f.write("\n\tTimeout for retransmission request for operation : " + request["operation"])
+
+   def sendRequest():
+   	for operation in self.requestSequenceList:
+   		self.f.write("\n\nSending request " + operation + " to head replica " + str(self.replicaList[0]["obj"]))
+   		self.seqNo += 1
+   		request = {}
+   		self.localDictionary[self.seqNo] = self.expectedResultList[self.seqNo-1]
+   		request["seqNo"] = self.seqNo
+   		request["operation"] = operation
+   		request["clientId"] = clientId
+   		self.successflag = False
+   		data = json.dumps(request)
+   		signedRequest = signingKey.sign(bytes(data,'utf-8'))
+   		self.f.write("\n\tEncrypting request...")
+   		send(('Request',signedRequest,clientId), to=self.replicaList[0]["obj"])
+   		self.f.write("\n\tAwaiting for result....")
+   		if await(self.successflag == True):
+   			self.f.write("\n\tReceived response for request " + operation + "\n")
+   		elif timeout(float(config["client_timeout"])):
+   			self.f.write("\n\tTimeout for request " + operation + "\n")
+   			retransmitRequest(request)
+
+   def run():
+   	self.f.write("\nRunning client Id - " +  str(clientId))
+   	await(self.setupFlag == True)
+   	sendRequest()
+   	self.f.close()

@@ -1,0 +1,6 @@
+
+Replica 1 setup done
+Running Replica 1
+Received message from Olympus : 
+ReplicaList [{'id': 1, 'obj': {<Replica:cf002#node2>}}, {'id': 2, 'obj': {<Replica:cf003#node2>}}, {'id': 3, 'obj': {<Replica:cf004#node2>}}]
+clientList: [{'id': 1, 'obj': {<Client:c6002#node3>}}, {'id': 2, 'obj': {<Client:c6003#node3>}}]
