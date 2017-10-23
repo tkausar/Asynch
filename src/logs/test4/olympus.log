@@ -4,22 +4,22 @@ Setting up all Replica...
 Setting up all client....
 Setting up all private and public keys....
 Sending list of replica and public key to all client
-Sending list of replica and public key to client - {<Client:51006#node3>}
-Sending list of replica and public key to client - {<Client:51007#node3>}
-Sending list of replica and public key to client - {<Client:51008#node3>}
-Sending list of replica and public key to client - {<Client:51009#node3>}
-Sending list of replica and public key to client - {<Client:5100a#node3>}
-Sending list of replica and public key to client - {<Client:5100b#node3>}
-Sending list of replica and public key to client - {<Client:5100c#node3>}
-Sending list of replica and public key to client - {<Client:5100d#node3>}
-Sending list of replica and public key to client - {<Client:5100e#node3>}
-Sending list of replica and public key to client - {<Client:5100f#node3>}
+Sending list of replica and public key to client - {<Client:0340a#node3>}
+Sending list of replica and public key to client - {<Client:0340b#node3>}
+Sending list of replica and public key to client - {<Client:0340c#node3>}
+Sending list of replica and public key to client - {<Client:0340d#node3>}
+Sending list of replica and public key to client - {<Client:0340e#node3>}
+Sending list of replica and public key to client - {<Client:0340f#node3>}
+Sending list of replica and public key to client - {<Client:03410#node3>}
+Sending list of replica and public key to client - {<Client:03411#node3>}
+Sending list of replica and public key to client - {<Client:03412#node3>}
+Sending list of replica and public key to client - {<Client:03413#node3>}
 Sending list of clients, replica and public keys to all replica
-Sending list of replica and public key to replica - {<Replica:86c08#node2>}
-Sending list of replica and public key to replica - {<Replica:86c09#node2>}
-Sending list of replica and public key to replica - {<Replica:86c0a#node2>}
-Sending list of replica and public key to replica - {<Replica:86c0b#node2>}
-Sending list of replica and public key to replica - {<Replica:86c0c#node2>}
-Sending list of replica and public key to replica - {<Replica:86c0d#node2>}
-Sending list of replica and public key to replica - {<Replica:86c0e#node2>}
+Sending list of replica and public key to replica - {<Replica:4900e#node2>}
+Sending list of replica and public key to replica - {<Replica:4900f#node2>}
+Sending list of replica and public key to replica - {<Replica:49010#node2>}
+Sending list of replica and public key to replica - {<Replica:49011#node2>}
+Sending list of replica and public key to replica - {<Replica:49012#node2>}
+Sending list of replica and public key to replica - {<Replica:49013#node2>}
+Sending list of replica and public key to replica - {<Replica:49014#node2>}
 Olympus is started.

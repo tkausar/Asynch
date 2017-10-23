@@ -19,6 +19,7 @@ class Replica(process):
    	self.responseFlag = False
    	self.verifyKeyHexClientList= {}
    	self.verifyKeyHexReplicaList= {}
+   	self.changeResult = False
    	self.f.write("\nReplica " + str(replicaId) +" setup done")
 
    # Message from olympus to intialize all variables.
@@ -33,6 +34,24 @@ class Replica(process):
    	self.verifyKeyHexReplicaList=verifyKeyHexReplicaList
    	self.setupFlag = True
    	self.f.write("\nReceived message from Olympus : \nReplicaList "+ str(replicaList)+ "\nclientList: "+ str(clientList))
+
+   def changeOperationFail(config, request):
+   	failure = "failures" + "[0," + str(replicaId) + "]"
+   	if failure in config :
+   		operations = config[failure].split(";")
+   		for operation in operations:
+   			op = operation.split("),")
+   			action,operands = op[0].split("(")
+   			c,seq = operands.split(",")
+   			if(int(c) ==  int(request["clientId"]) and int(seq) == int(request["seqNo"])):
+   				if action == "client_request":
+   					if "change_operation" in op[1]:
+   						request["operation"] = "get('x')"
+   					elif "change_result" in op[1]:
+   						self.changeResult = True
+   					elif "drop_resul_stmt" in op[1]:
+   						dropHeadResult = True
+   	return request
 
    # Handles result shuttle from successor and append it to respective cache and send it back to it's predecessor
    def receive(msg=('ResultShuttle',resultProof), from_=p):
@@ -58,7 +77,11 @@ class Replica(process):
    		self.f.write("\nChecked validity of order statement")
    		if( checkValidityOfOrderStatement(shuttle["oproof"]) == True):
    			self.f.write("\nProcessing request: " + request["operation"])
+   			request = changeOperationFail(config,request)
    			result = processRequest(request["operation"])
+   			if(self.changeResult == True):
+   				result = "OK"
+   			self.changeResult = False
    			self.f.write("\nChecked validity of result statement")
    			if( checkResultValidity(shuttle["rproof"], result) == True ):
    				createHistoryTuple(slotnumber,request["seqNo"],request["clientId"])
@@ -67,7 +90,9 @@ class Replica(process):
    				self.f.write("\nAppended orderProof and resultproof to shuttle")
    				self.f.write("\nCurrent Database : " + str(self.db))
    				sendRequest(request,shuttle,slotnumber)
-
+   			else:
+   				self.f.write("\nResult Proof validty failed... Proof of misbehiviour")
+   			
    # Check result validity
    def checkResultValidity(resultProof, result):
    	counter = 1
@@ -168,6 +193,7 @@ class Replica(process):
 
    # Request from client
    def receive(msg=('Request',signedRequest,clientId,),from_=client):
+   	self.changeResult = False
    	request = decryptClientRequest(signedRequest,clientId)
    	self.f.write("\n\nReceived signed request from client :"+ str(client))
    	self.f.write("\nDecrypted request: "+ request["operation"])
@@ -176,7 +202,10 @@ class Replica(process):
    		shuttle = {}
    		self.f.write("\nHead Replica: Created slot number " + str(self.slotnumber))
    		self.f.write("\nProcessing request: " + request["operation"])
+   		request = changeOperationFail(config,request)
    		result = processRequest(request["operation"])
+   		if(self.changeResult == True):
+   			result = "OK"
    		self.f.write("\nProcessed request result: "+ result)
    		oproof = createOrderProof(request, self.slotnumber)
    		rproof = createResultProof(request, self.slotnumber, result)
@@ -296,6 +325,7 @@ class Replica(process):
    				self.f.write("\nSending shuttle to next Replica : " +  str(each["obj"]) + " with request " +  request["operation"])
    				send(('shuttlefromReplica',shuttle,request,slotnumber,), to=each["obj"])
 
+   
    def run():
    	self.f.write("\nRunning Replica " + str(replicaId))
    	await(self.setupFlag == True)

@@ -4,19 +4,19 @@ Client - 7 setup completed
 Running client Id - 7
 Received replica list and public keys from olympus
 
-Sending request get('f') to head replica {<Replica:86c08#node2>}
+Sending request get('f') to head replica {<Replica:4900e#node2>}
 	Encrypting request...
 	Awaiting for result....
-	Received result:6000 from replica : <Replica:86c0e#node2>
+	Received result:6000 from replica : <Replica:49014#node2>
 	Checking proof of misbehiour by checking signatures and hashes in result proof
 	Checked all signatures and hashes present in result proof for operation get('f')
 	Received response for request get('f')
 
 
-Sending request put('e','star') to head replica {<Replica:86c08#node2>}
+Sending request put('e','star') to head replica {<Replica:4900e#node2>}
 	Encrypting request...
 	Awaiting for result....
-	Received result:OK from replica : <Replica:86c0e#node2>
+	Received result:OK from replica : <Replica:49014#node2>
 	Checking proof of misbehiour by checking signatures and hashes in result proof
 	Checked all signatures and hashes present in result proof for operation put('e','star')
 	Received response for request put('e','star')

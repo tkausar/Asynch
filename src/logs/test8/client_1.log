@@ -3,30 +3,30 @@ Client - 1 setup completed
 Running client Id - 1
 Received replica list and public keys from olympus
 
-Sending request put('movie','star') to head replica {<Replica:49005#node2>}
+Sending request put('movie','star') to head replica {<Replica:f6002#node2>}
 	Encrypting request...
 	Awaiting for result....
-	Received result:OK from replica : <Replica:49007#node2>
+	Received result:OK from replica : <Replica:f6004#node2>
 	Checking proof of misbehiour by checking signatures and hashes in result proof
 	Checked all signatures and hashes present in result proof for operation put('movie','star')
 	Got Expected Result
 	Received response for request put('movie','star')
 
 
-Sending request append('movie',' wars') to head replica {<Replica:49005#node2>}
+Sending request append('movie',' wars') to head replica {<Replica:f6002#node2>}
 	Encrypting request...
 	Awaiting for result....
-	Received result:OK from replica : <Replica:49007#node2>
+	Received result:OK from replica : <Replica:f6004#node2>
 	Checking proof of misbehiour by checking signatures and hashes in result proof
 	Checked all signatures and hashes present in result proof for operation append('movie',' wars')
 	Got Expected Result
 	Received response for request append('movie',' wars')
 
 
-Sending request get('movie') to head replica {<Replica:49005#node2>}
+Sending request get('movie') to head replica {<Replica:f6002#node2>}
 	Encrypting request...
 	Awaiting for result....
-	Received result:star wars from replica : <Replica:49007#node2>
+	Received result:star wars from replica : <Replica:f6004#node2>
 	Checking proof of misbehiour by checking signatures and hashes in result proof
 	Checked all signatures and hashes present in result proof for operation get('movie')
 	Got Expected Result

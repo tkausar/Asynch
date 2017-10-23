@@ -1,0 +1,13 @@
+
+Setting up olympus....
+Setting up all Replica...
+Setting up all client....
+Setting up all private and public keys....
+Sending list of replica and public key to all client
+Sending list of replica and public key to client - {<Client:99402#node3>}
+Sending list of replica and public key to client - {<Client:99403#node3>}
+Sending list of clients, replica and public keys to all replica
+Sending list of replica and public key to replica - {<Replica:f6002#node2>}
+Sending list of replica and public key to replica - {<Replica:f6003#node2>}
+Sending list of replica and public key to replica - {<Replica:f6004#node2>}
+Olympus is started.

@@ -2,10 +2,10 @@
 Replica 2 setup done
 Running Replica 2
 Received message from Olympus : 
-ReplicaList [{'id': 1, 'obj': {<Replica:86c05#node2>}}, {'id': 2, 'obj': {<Replica:86c06#node2>}}, {'id': 3, 'obj': {<Replica:86c07#node2>}}]
-clientList: [{'id': 1, 'obj': {<Client:51004#node3>}}, {'id': 2, 'obj': {<Client:51005#node3>}}]
+ReplicaList [{'obj': {<Replica:4900b#node2>}, 'id': 1}, {'obj': {<Replica:4900c#node2>}, 'id': 2}, {'obj': {<Replica:4900d#node2>}, 'id': 3}]
+clientList: [{'obj': {<Client:03408#node3>}, 'id': 1}, {'obj': {<Client:03409#node3>}, 'id': 2}]
 
-Received shuttle from previous replica : <Replica:86c05#node2> for operation : put('f','6000')
+Received shuttle from previous replica : <Replica:4900b#node2> for operation : put('f','6000')
 Checked history for slot number : 1 and sequence number : 1
 Checked validity of order statement
 Processing request: put('f','6000')
@@ -14,9 +14,9 @@ Added operation to replica's history
 Creating a hash of result
 Appended orderProof and resultproof to shuttle
 Current Database : {'f': '6000'}
-Sending shuttle to next Replica : {<Replica:86c07#node2>} with request put('f','6000')
+Sending shuttle to next Replica : {<Replica:4900d#node2>} with request put('f','6000')
 
-Received shuttle from previous replica : <Replica:86c05#node2> for operation : get('f')
+Received shuttle from previous replica : <Replica:4900b#node2> for operation : get('f')
 Checked history for slot number : 2 and sequence number : 1
 Checked validity of order statement
 Processing request: get('f')
@@ -25,19 +25,19 @@ Added operation to replica's history
 Creating a hash of result
 Appended orderProof and resultproof to shuttle
 Current Database : {'f': '6000'}
-Sending shuttle to next Replica : {<Replica:86c07#node2>} with request get('f')
+Sending shuttle to next Replica : {<Replica:4900d#node2>} with request get('f')
 
-Received result shuttle from : <Replica:86c07#node2> for operation : put('f','6000')
+Received result shuttle from : <Replica:4900d#node2> for operation : put('f','6000')
 Appending resultShulttle to cache of replica
-Sending resultShuttle to previous replica : {<Replica:86c05#node2>}
+Sending resultShuttle to previous replica : {<Replica:4900b#node2>}
 
 
-Received result shuttle from : <Replica:86c07#node2> for operation : get('f')
+Received result shuttle from : <Replica:4900d#node2> for operation : get('f')
 Appending resultShulttle to cache of replica
-Sending resultShuttle to previous replica : {<Replica:86c05#node2>}
+Sending resultShuttle to previous replica : {<Replica:4900b#node2>}
 
 
-Received shuttle from previous replica : <Replica:86c05#node2> for operation : put('d','800')
+Received shuttle from previous replica : <Replica:4900b#node2> for operation : put('d','800')
 Checked history for slot number : 3 and sequence number : 2
 Checked validity of order statement
 Processing request: put('d','800')
@@ -45,10 +45,10 @@ Checked validity of result statement
 Added operation to replica's history
 Creating a hash of result
 Appended orderProof and resultproof to shuttle
-Current Database : {'d': '800', 'f': '6000'}
-Sending shuttle to next Replica : {<Replica:86c07#node2>} with request put('d','800')
+Current Database : {'f': '6000', 'd': '800'}
+Sending shuttle to next Replica : {<Replica:4900d#node2>} with request put('d','800')
 
-Received shuttle from previous replica : <Replica:86c05#node2> for operation : append('d',' ttt')
+Received shuttle from previous replica : <Replica:4900b#node2> for operation : append('d',' ttt')
 Checked history for slot number : 4 and sequence number : 2
 Checked validity of order statement
 Processing request: append('d',' ttt')
@@ -56,20 +56,20 @@ Checked validity of result statement
 Added operation to replica's history
 Creating a hash of result
 Appended orderProof and resultproof to shuttle
-Current Database : {'d': '800 ttt', 'f': '6000'}
-Sending shuttle to next Replica : {<Replica:86c07#node2>} with request append('d',' ttt')
+Current Database : {'f': '6000', 'd': '800 ttt'}
+Sending shuttle to next Replica : {<Replica:4900d#node2>} with request append('d',' ttt')
 
-Received result shuttle from : <Replica:86c07#node2> for operation : put('d','800')
+Received result shuttle from : <Replica:4900d#node2> for operation : put('d','800')
 Appending resultShulttle to cache of replica
-Sending resultShuttle to previous replica : {<Replica:86c05#node2>}
+Sending resultShuttle to previous replica : {<Replica:4900b#node2>}
 
 
-Received result shuttle from : <Replica:86c07#node2> for operation : append('d',' ttt')
+Received result shuttle from : <Replica:4900d#node2> for operation : append('d',' ttt')
 Appending resultShulttle to cache of replica
-Sending resultShuttle to previous replica : {<Replica:86c05#node2>}
+Sending resultShuttle to previous replica : {<Replica:4900b#node2>}
 
 
-Received shuttle from previous replica : <Replica:86c05#node2> for operation : get('g')
+Received shuttle from previous replica : <Replica:4900b#node2> for operation : get('g')
 Checked history for slot number : 5 and sequence number : 3
 Checked validity of order statement
 Processing request: get('g')
@@ -77,15 +77,15 @@ Checked validity of result statement
 Added operation to replica's history
 Creating a hash of result
 Appended orderProof and resultproof to shuttle
-Current Database : {'d': '800 ttt', 'f': '6000'}
-Sending shuttle to next Replica : {<Replica:86c07#node2>} with request get('g')
+Current Database : {'f': '6000', 'd': '800 ttt'}
+Sending shuttle to next Replica : {<Replica:4900d#node2>} with request get('g')
 
-Received result shuttle from : <Replica:86c07#node2> for operation : get('g')
+Received result shuttle from : <Replica:4900d#node2> for operation : get('g')
 Appending resultShulttle to cache of replica
-Sending resultShuttle to previous replica : {<Replica:86c05#node2>}
+Sending resultShuttle to previous replica : {<Replica:4900b#node2>}
 
 
-Received shuttle from previous replica : <Replica:86c05#node2> for operation : put('g','666')
+Received shuttle from previous replica : <Replica:4900b#node2> for operation : put('g','666')
 Checked history for slot number : 6 and sequence number : 4
 Checked validity of order statement
 Processing request: put('g','666')
@@ -93,9 +93,9 @@ Checked validity of result statement
 Added operation to replica's history
 Creating a hash of result
 Appended orderProof and resultproof to shuttle
-Current Database : {'d': '800 ttt', 'g': '666', 'f': '6000'}
-Sending shuttle to next Replica : {<Replica:86c07#node2>} with request put('g','666')
+Current Database : {'g': '666', 'f': '6000', 'd': '800 ttt'}
+Sending shuttle to next Replica : {<Replica:4900d#node2>} with request put('g','666')
 
-Received result shuttle from : <Replica:86c07#node2> for operation : put('g','666')
+Received result shuttle from : <Replica:4900d#node2> for operation : put('g','666')
 Appending resultShulttle to cache of replica
-Sending resultShuttle to previous replica : {<Replica:86c05#node2>}
+Sending resultShuttle to previous replica : {<Replica:4900b#node2>}
