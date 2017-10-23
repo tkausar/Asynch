@@ -93,3 +93,46 @@ Entry7:
 	5. Programmatic check :
 		Client log file displays "Not an expected result. Test Case Failed."
 	6. Fail because the operation provided out of range indices values for the slice operation
+
+Entry8:
+	1. Scenario - for head replica performing failure(client2, seqnum2) and running failure change_operation()
+	2. config8.txt
+	3. Running commands:
+		python3 -m da -n node2 -D replica.da
+		python3 -m da -n node3 -D client.da
+		python3 -m da -n node1 -D olympus.da
+		python3 -m da -n node0 init.da ../config/config8.txt
+	4. Log files generated inside the folder - ./src/logs/test8/
+	5. Programmatic check :
+		Client log file displays "Not an expected result. Test Case Failed."
+	6. Fail because of the failure introduced in the config file
+	
+Entry9:
+	1. Scenario - clients - 2, replica - 3 ,
+		For replica 2 performing failure(client1, seqnum3). This introduces the failure change_result(). 
+		Replica 2 gives proof of misbehavior because changed result doesn't match with the previous result statements. 
+	2. config9.txt
+	3. Running commands:
+		python3 -m da -n node2 -D replica.da
+		python3 -m da -n node3 -D client.da
+		python3 -m da -n node1 -D olympus.da
+		python3 -m da -n node0 init.da ../config/config9.txt
+	4. Log files generated inside the folder - ./src/logs/test9/
+	5. Programmatic check :
+		Replica_2 log file displays "Proof of misbehavior"
+	6. Fail because of the failure introduced in the config file. Changed result doesn't match with the previous result statements.
+
+Entry10:
+	1. Scenario - clients - 1, replica - 3 ,
+		For replica 2 performing failure(client1, seqnum3). This introduces the failure shuttle(). 
+		Replica 2 gives proof of misbehavior because changed result doesn't match with the previous result statements. 
+	2. config10.txt
+	3. Running commands:
+		python3 -m da -n node2 -D replica.da
+		python3 -m da -n node3 -D client.da
+		python3 -m da -n node1 -D olympus.da
+		python3 -m da -n node0 init.da ../config/config10.txt
+	4. Log files generated inside the folder - ./src/logs/test10/
+	5. Programmatic check :
+		Replica_2 log file displays "Proof of misbehavior"
+	6. Fail because of the failure introduced in the config file. Changed result doesn't match with the previous result statements.
