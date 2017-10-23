@@ -1,0 +1,45 @@
+
+Replica 2 setup done
+Running Replica 2
+Received message from Olympus : 
+ReplicaList [{'id': 1, 'obj': {<Replica:36002#node2>}}, {'id': 2, 'obj': {<Replica:36003#node2>}}, {'id': 3, 'obj': {<Replica:36004#node2>}}]
+clientList: [{'id': 1, 'obj': {<Client:a2402#node3>}}]
+
+Received shuttle from previous replica : <Replica:36002#node2> for operation : put('movie','star')
+Checked history for slot number : 1 and sequence number : 1
+Checked validity of order statement
+Processing request: put('movie','star')
+Checked validity of result statement
+Added operation to replica's history
+Creating a hash of result
+Appended orderProof and resultproof to shuttle
+Current Database : {'movie': 'star'}
+Sending shuttle to next Replica : {<Replica:36004#node2>} with request put('movie','star')
+
+Received result shuttle from : <Replica:36004#node2> for operation : put('movie','star')
+Appending resultShulttle to cache of replica
+Sending resultShuttle to previous replica : {<Replica:36002#node2>}
+
+
+Received shuttle from previous replica : <Replica:36002#node2> for operation : append('movie',' wars')
+Checked history for slot number : 2 and sequence number : 2
+Checked validity of order statement
+Processing request: append('movie',' wars')
+Checked validity of result statement
+Added operation to replica's history
+Creating a hash of result
+Appended orderProof and resultproof to shuttle
+Current Database : {'movie': 'star wars'}
+Sending shuttle to next Replica : {<Replica:36004#node2>} with request append('movie',' wars')
+
+Received result shuttle from : <Replica:36004#node2> for operation : append('movie',' wars')
+Appending resultShulttle to cache of replica
+Sending resultShuttle to previous replica : {<Replica:36002#node2>}
+
+
+Received shuttle from previous replica : <Replica:36002#node2> for operation : get('movie')
+Checked history for slot number : 3 and sequence number : 3
+Checked validity of order statement
+Processing request: get('movie')
+Checked validity of result statement
+Result Proof validty failed... Proof of misbehiviour

@@ -51,6 +51,13 @@ class Replica(process):
    						self.changeResult = True
    					elif "drop_resul_stmt" in op[1]:
    						dropHeadResult = True
+   				if action == "shuttle":
+   					if "change_operation" in op[1]:
+   						request["operation"] = "get('x')"
+   					elif "change_result" in op[1]:
+   						self.changeResult = True
+   					elif "drop_resul_stmt" in op[1]:
+    						dropHeadResult = True
    	return request
 
    # Handles result shuttle from successor and append it to respective cache and send it back to it's predecessor

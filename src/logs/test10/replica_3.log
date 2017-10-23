@@ -1,0 +1,30 @@
+
+Replica 3 setup done
+Running Replica 3
+Received message from Olympus : 
+ReplicaList [{'id': 1, 'obj': {<Replica:36002#node2>}}, {'id': 2, 'obj': {<Replica:36003#node2>}}, {'id': 3, 'obj': {<Replica:36004#node2>}}]
+clientList: [{'id': 1, 'obj': {<Client:a2402#node3>}}]
+
+Received shuttle from previous replica : <Replica:36003#node2> for operation : put('movie','star')
+Checked history for slot number : 1 and sequence number : 1
+Checked validity of order statement
+Processing request: put('movie','star')
+Checked validity of result statement
+Added operation to replica's history
+Creating a hash of result
+Appended orderProof and resultproof to shuttle
+Current Database : {'movie': 'star'}
+Sending ResultProof and result to client : {<Client:a2402#node3>}
+Sending Result Shuttle to previous replica : {<Replica:36003#node2>}
+
+Received shuttle from previous replica : <Replica:36003#node2> for operation : append('movie',' wars')
+Checked history for slot number : 2 and sequence number : 2
+Checked validity of order statement
+Processing request: append('movie',' wars')
+Checked validity of result statement
+Added operation to replica's history
+Creating a hash of result
+Appended orderProof and resultproof to shuttle
+Current Database : {'movie': 'star wars'}
+Sending ResultProof and result to client : {<Client:a2402#node3>}
+Sending Result Shuttle to previous replica : {<Replica:36003#node2>}
