@@ -1,0 +1,95 @@
+Entry1:
+	1. Scenario - 2 clients, 3 replicas , no timeout, non pseudoRandom Workload
+	2. config1.txt
+	3. Running commands:
+		python3 -m da -n node2 -D replica.da
+		python3 -m da -n node3 -D client.da
+		python3 -m da -n node1 -D olympus.da
+		python3 -m da -n node0 init.da ../config/config1.txt
+	4. Log files generated inside the folder - ./src/logs/test1/
+	5. Programmatic check :
+		Client log file displays "Got Expected Result"
+	6. Pass
+	
+Entry2:
+	1. Scenario - 2 clients, 3 replicas , no timeout, non pseudoRandom Workload
+	2. config2.txt
+	3. Running commands:
+		python3 -m da -n node2 -D replica.da
+		python3 -m da -n node3 -D client.da
+		python3 -m da -n node1 -D olympus.da
+		python3 -m da -n node0 init.da ../config/config2.txt
+	4. Log files generated inside the folder - ./src/logs/test2/
+	5. Programmatic check :
+		Client log file displays "Not an expected result. Test Case Failed."
+	6. Fail because expectedWorkloadResult didn't match with actual result from system
+	
+Entry3:
+	1. Scenario - 2 clients, 3 replicas , no timeout, pseudoRandom Workload
+	2. config3.txt
+	3. Running commands:
+		python3 -m da -n node2 -D replica.da
+		python3 -m da -n node3 -D client.da
+		python3 -m da -n node1 -D olympus.da
+		python3 -m da -n node0 init.da ../config/config3.txt
+	4. Log files generated inside the folder - ./src/logs/test3/
+	5. Programmatic check :
+		Run this test twice. Same results will come.
+	6. Pass
+
+Entry4:
+	1. Scenario - 10 clients, 7 replicas , no timeout, pseudoRandom Workloads
+	2. config4.txt
+	3. Running commands:
+		python3 -m da -n node2 -D replica.da
+		python3 -m da -n node3 -D client.da
+		python3 -m da -n node1 -D olympus.da
+		python3 -m da -n node0 init.da ../config/config4.txt
+	4. Log files generated inside the folder - ./src/logs/test4/
+	5. Programmatic check :
+		Run this test twice. Same results will come.
+	6. Pass
+
+Entry5:
+	1. Scenario - 2 clients, 5 replicas , client timeouts, non pseudoRandom Workloads
+		On timeout, client retransmits requests to all 5 replicas
+		Replicas check resultProof in cacheResult. It doesn't find in the cache so it forwards retransmit request to head replica.   
+	2. config5.txt
+	3. Running commands:
+		python3 -m da -n node2 -D replica.da
+		python3 -m da -n node3 -D client.da
+		python3 -m da -n node1 -D olympus.da
+		python3 -m da -n node0 init.da ../config/config5.txt
+	4. Log files generated inside the folder - ./src/logs/test5/
+	5. Programmatic check :
+		Each client log file displays "Got Expected Result"
+	6. Pass
+
+Entry6:
+	1. Scenario - 2 clients, 5 replicas , client timeouts, replica timeouts, non pseudoRandom Workloads
+		On timeout, client retransmits requests to all 5 replicas
+		Replicas check resultProof in cacheResult. It doesn't find in the cache so it forwards retransmit request to head replica.
+		While awaiting for resultshuttle, replica also timeouts. Hence, so client doesn't get the result.
+	2. config6.txt
+	3. Running commands:
+		python3 -m da -n node2 -D replica.da
+		python3 -m da -n node3 -D client.da
+		python3 -m da -n node1 -D olympus.da
+		python3 -m da -n node0 init.da ../config/config6.txt
+	4. Log files generated inside the folder - ./src/logs/test6/
+	5. Programmatic check :
+		Replica log says "Timeout for retransmission request for operation"
+	6. Pass
+	
+Entry7:
+	1. Scenario - gave invalid range for slice operation
+	2. config7.txt
+	3. Running commands:
+		python3 -m da -n node2 -D replica.da
+		python3 -m da -n node3 -D client.da
+		python3 -m da -n node1 -D olympus.da
+		python3 -m da -n node0 init.da ../config/config7.txt
+	4. Log files generated inside the folder - ./src/logs/test7/
+	5. Programmatic check :
+		Client log file displays "Not an expected result. Test Case Failed."
+	6. Fail because the operation provided out of range indices values for the slice operation
