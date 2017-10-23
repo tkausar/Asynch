@@ -41,7 +41,6 @@ CONTRIBUTIONS.
 		check that dictionary contains expected content at end of test case 
 		creates initial configuration: create keys, create, setup, and start processes
 		hashing and public-key cryptography
-		multiple hosts
 		Readme and testing.txt
 	
 MAIN FILES.
