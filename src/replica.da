@@ -4,10 +4,12 @@ import nacl.hash
 import json
 from nacl.bindings.utils import sodium_memcmp
 class Replica(process):
+
+   # setup is called by olympus with sepcifiying the replica type - head/tail and private key of respective replica. 
    def setup(replicaId,isHead,isTail,signingKey,config,logFilePath):
    	self.f = open(logFilePath + 'replica_'+ str(replicaId) + '.log','w')
    	self.slotnumber = 0
-   	self.history = []
+   	self.history = [] 
    	self.cacheDict = []
    	self.replicaList = []
    	self.clientList = []
@@ -20,6 +22,10 @@ class Replica(process):
    	self.f.write("\nReplica " + str(replicaId) +" setup done")
 
    # Message from olympus to intialize all variables.
+   # replicaList - List of all replica
+   # clientList - List of all clients
+   # verifyKeyHexClientList - List of public key of clients
+   # verifyKeyHexReplicaList - List of public key of replica
    def receive(msg=('setupReplica',replicaList,clientList,verifyKeyHexClientList,verifyKeyHexReplicaList,)):
    	self.replicaList = replicaList
    	self.clientList = clientList
@@ -28,6 +34,7 @@ class Replica(process):
    	self.setupFlag = True
    	self.f.write("\nReceived message from Olympus : \nReplicaList "+ str(replicaList)+ "\nclientList: "+ str(clientList))
 
+   # Handles result shuttle from successor and append it to respective cache and send it back to it's predecessor
    def receive(msg=('ResultShuttle',resultProof), from_=p):
    	self.f.write("\n\nReceived result shuttle from : " + str(p) + " for operation : " + resultProof["operation"])
    	self.f.write("\nAppending resultShulttle to cache of replica")
@@ -37,7 +44,13 @@ class Replica(process):
    		self.f.write("\nSending resultShuttle to previous replica : "+ str(self.replicaList[replicaId-2]["obj"]) + "\n")
    		send(('ResultShuttle',resultProof,), to=self.replicaList[replicaId-2]["obj"])
 
-   # Message from replica
+   # Receives shuttle from previous replica. It performs follwing validation - 
+   # 1. Checking history for slot number, sequence number for client Id
+   # 2. Check validity of signed order statements of all previous replica
+   # 3. Exceute operation and check hash of result with signed result statement of all previous replica
+   # 4. Add opeartion to history of replica 
+   # 5. Create a orderproof and resultProof and append it to shuttle
+   # 6. Send shuttle to next replica 
    def receive(msg=('shuttlefromReplica',shuttle,request,slotnumber,), from_=p):
    	self.f.write("\n\nReceived shuttle from previous replica : "+ str(p) + " for operation : " + request["operation"])
    	self.f.write("\nChecked history for slot number : " + str(slotnumber) + " and " + "sequence number : " + str(request["seqNo"] ))
@@ -90,12 +103,15 @@ class Replica(process):
    	data = verify_key.verify(signedStatement)
    	return json.loads(data.decode('utf-8'))
 
+   # Decrypt client request.
    def decryptClientRequest(signedRequest,clientId):
    	verify_key = nacl.signing.VerifyKey(self.verifyKeyHexClientList[clientId], encoder=nacl.encoding.HexEncoder)
    	data = verify_key.verify(signedRequest)
    	return json.loads(data.decode('utf-8'))
 
-   # Retransmission
+   # Retransmission request from client
+   # 1. checks replica cache - a> If found, send result proof and result back to client
+   #			       b> Retransmit request to head replica  
    def receive(msg=('Retransmit',signedRequest,clientId,),from_=client):
    	request = decryptClientRequest(signedRequest,clientId)
    	self.f.write("\n\nReceived retransmit signed request from client :"+ str(client))
@@ -117,7 +133,7 @@ class Replica(process):
    			self.f.write("\nNon-head replica timeout for operation : " + request["operation"])
    			
 
-   # Msg from replica from timeout to head replica
+   # Request from replica from timeout to head replica
    def receive(msg=('RetransmitToHead',signedRequest,clientId,), from_=replica):
    	request = decryptClientRequest(signedRequest,clientId)
    	self.f.write("\n\nReceived retransmit signed request from replica :"+ str(replica))
@@ -150,7 +166,7 @@ class Replica(process):
    		self.f.write("\nCurrent Database : " + str(self.db))
    		sendRequest(request,shuttle,self.slotnumber)
 
-   # Message from client
+   # Request from client
    def receive(msg=('Request',signedRequest,clientId,),from_=client):
    	request = decryptClientRequest(signedRequest,clientId)
    	self.f.write("\n\nReceived signed request from client :"+ str(client))
@@ -288,7 +304,6 @@ class Replica(process):
    def run():
    	self.f.write("\nRunning Replica " + str(replicaId))
    	await(self.setupFlag == True)
-   	#output("setupFlag is True")
    	if await(self.responseFlag == True):
    		output("Done")
    	elif timeout(1):
