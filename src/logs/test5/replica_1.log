@@ -1,0 +1,246 @@
+
+Replica 1 setup done
+Running Replica 1
+Received message from Olympus : 
+ReplicaList [{'id': 1, 'obj': {<Replica:86c0f#node2>}}, {'id': 2, 'obj': {<Replica:86c10#node2>}}, {'id': 3, 'obj': {<Replica:86c11#node2>}}, {'id': 4, 'obj': {<Replica:86c12#node2>}}, {'id': 5, 'obj': {<Replica:86c13#node2>}}]
+clientList: [{'id': 1, 'obj': {<Client:51010#node3>}}, {'id': 2, 'obj': {<Client:51011#node3>}}]
+
+Received signed request from client :<Client:51010#node3>
+Decrypted request: put('movie','star')
+Head Replica: Created slot number 1
+Processing request: put('movie','star')
+Processed request result: OK
+Created OrderProof with signed oredrStatement
+Creating a hash of result
+Created ResultProof with signed resultStatement
+Added operation to replica's history
+Appended orderProof and resultproof to shuttle
+Current Database : {'movie': 'star'}
+Sending shuttle to next Replica : {<Replica:86c10#node2>} with request put('movie','star')
+
+Received signed request from client :<Client:51011#node3>
+Decrypted request: put('jedi','luke skywalker')
+Head Replica: Created slot number 2
+Processing request: put('jedi','luke skywalker')
+Processed request result: OK
+Created OrderProof with signed oredrStatement
+Creating a hash of result
+Created ResultProof with signed resultStatement
+Added operation to replica's history
+Appended orderProof and resultproof to shuttle
+Current Database : {'jedi': 'luke skywalker', 'movie': 'star'}
+Sending shuttle to next Replica : {<Replica:86c10#node2>} with request put('jedi','luke skywalker')
+
+Received retransmit signed request from client :<Client:51010#node3>
+Decrypted request: put('movie','star')
+Checking in replica's cache...
+
+Received retransmit signed request from client :<Client:51011#node3>
+Decrypted request: put('jedi','luke skywalker')
+Checking in replica's cache...
+
+Received retransmit signed request from replica :<Replica:86c10#node2>
+Decrypted request: put('movie','star')
+Awaiting for result shuttle...
+
+Received signed request from client :<Client:51010#node3>
+Decrypted request: append('movie',' wars')
+Head Replica: Created slot number 3
+Processing request: append('movie',' wars')
+Processed request result: OK
+Created OrderProof with signed oredrStatement
+Creating a hash of result
+Created ResultProof with signed resultStatement
+Added operation to replica's history
+Appended orderProof and resultproof to shuttle
+Current Database : {'jedi': 'luke skywalker', 'movie': 'star wars'}
+Sending shuttle to next Replica : {<Replica:86c10#node2>} with request append('movie',' wars')
+
+Received signed request from client :<Client:51011#node3>
+Decrypted request: slice('jedi','0:4')
+Head Replica: Created slot number 4
+Processing request: slice('jedi','0:4')
+Processed request result: OK
+Created OrderProof with signed oredrStatement
+Creating a hash of result
+Created ResultProof with signed resultStatement
+Added operation to replica's history
+Appended orderProof and resultproof to shuttle
+Current Database : {'jedi': 'luke', 'movie': 'star wars'}
+Sending shuttle to next Replica : {<Replica:86c10#node2>} with request slice('jedi','0:4')
+
+Received retransmit signed request from replica :<Replica:86c10#node2>
+Decrypted request: put('jedi','luke skywalker')
+Awaiting for result shuttle...
+
+Received retransmit signed request from client :<Client:51010#node3>
+Decrypted request: append('movie',' wars')
+Checking in replica's cache...
+
+Received retransmit signed request from client :<Client:51011#node3>
+Decrypted request: slice('jedi','0:4')
+Checking in replica's cache...
+
+Received retransmit signed request from replica :<Replica:86c10#node2>
+Decrypted request: append('movie',' wars')
+Awaiting for result shuttle...
+
+Received retransmit signed request from replica :<Replica:86c11#node2>
+Decrypted request: put('movie','star')
+Awaiting for result shuttle...
+
+Received retransmit signed request from replica :<Replica:86c10#node2>
+Decrypted request: slice('jedi','0:4')
+Awaiting for result shuttle...
+
+Received retransmit signed request from replica :<Replica:86c11#node2>
+Decrypted request: put('jedi','luke skywalker')
+Awaiting for result shuttle...
+
+Received retransmit signed request from replica :<Replica:86c11#node2>
+Decrypted request: append('movie',' wars')
+Awaiting for result shuttle...
+
+Received retransmit signed request from replica :<Replica:86c11#node2>
+Decrypted request: slice('jedi','0:4')
+Awaiting for result shuttle...
+
+Received signed request from client :<Client:51010#node3>
+Decrypted request: get('movie')
+Head Replica: Created slot number 5
+Processing request: get('movie')
+Processed request result: star wars
+Created OrderProof with signed oredrStatement
+Creating a hash of result
+Created ResultProof with signed resultStatement
+Added operation to replica's history
+Appended orderProof and resultproof to shuttle
+Current Database : {'jedi': 'luke', 'movie': 'star wars'}
+Sending shuttle to next Replica : {<Replica:86c10#node2>} with request get('movie')
+
+Received signed request from client :<Client:51011#node3>
+Decrypted request: get('jedi')
+Head Replica: Created slot number 6
+Processing request: get('jedi')
+Processed request result: luke
+Created OrderProof with signed oredrStatement
+Creating a hash of result
+Created ResultProof with signed resultStatement
+Added operation to replica's history
+Appended orderProof and resultproof to shuttle
+Current Database : {'jedi': 'luke', 'movie': 'star wars'}
+Sending shuttle to next Replica : {<Replica:86c10#node2>} with request get('jedi')
+
+Received retransmit signed request from client :<Client:51010#node3>
+Decrypted request: get('movie')
+Checking in replica's cache...
+
+Received retransmit signed request from client :<Client:51011#node3>
+Decrypted request: get('jedi')
+Checking in replica's cache...
+
+Received retransmit signed request from replica :<Replica:86c10#node2>
+Decrypted request: get('movie')
+Awaiting for result shuttle...
+
+Received retransmit signed request from replica :<Replica:86c12#node2>
+Decrypted request: put('movie','star')
+Awaiting for result shuttle...
+
+Received retransmit signed request from replica :<Replica:86c12#node2>
+Decrypted request: put('jedi','luke skywalker')
+Awaiting for result shuttle...
+
+Received retransmit signed request from replica :<Replica:86c12#node2>
+Decrypted request: append('movie',' wars')
+Awaiting for result shuttle...
+
+Received retransmit signed request from replica :<Replica:86c12#node2>
+Decrypted request: slice('jedi','0:4')
+Awaiting for result shuttle...
+
+Received retransmit signed request from replica :<Replica:86c10#node2>
+Decrypted request: get('jedi')
+Awaiting for result shuttle...
+
+Received retransmit signed request from replica :<Replica:86c11#node2>
+Decrypted request: get('movie')
+Awaiting for result shuttle...
+
+Received retransmit signed request from replica :<Replica:86c11#node2>
+Decrypted request: get('jedi')
+Awaiting for result shuttle...
+
+Received retransmit signed request from replica :<Replica:86c12#node2>
+Decrypted request: get('movie')
+Awaiting for result shuttle...
+
+Received retransmit signed request from replica :<Replica:86c12#node2>
+Decrypted request: get('jedi')
+Awaiting for result shuttle...
+
+Received retransmit signed request from replica :<Replica:86c13#node2>
+Decrypted request: put('movie','star')
+Awaiting for result shuttle...
+
+Received retransmit signed request from replica :<Replica:86c13#node2>
+Decrypted request: put('jedi','luke skywalker')
+Awaiting for result shuttle...
+
+Received retransmit signed request from replica :<Replica:86c13#node2>
+Decrypted request: append('movie',' wars')
+Awaiting for result shuttle...
+
+Received retransmit signed request from replica :<Replica:86c13#node2>
+Decrypted request: slice('jedi','0:4')
+Awaiting for result shuttle...
+
+Received retransmit signed request from replica :<Replica:86c13#node2>
+Decrypted request: get('movie')
+Awaiting for result shuttle...
+
+Received retransmit signed request from replica :<Replica:86c13#node2>
+Decrypted request: get('jedi')
+Awaiting for result shuttle...
+
+Received result shuttle from : <Replica:86c10#node2> for operation : put('movie','star')
+Appending resultShulttle to cache of replica
+Got a result shuttle for operation get('jedi')
+Got a result shuttle for operation get('movie')
+Got a result shuttle for operation slice('jedi','0:4')
+Got a result shuttle for operation append('movie',' wars')
+Got a result shuttle for operation put('jedi','luke skywalker')
+Got a result shuttle for operation put('movie','star')
+Got a result shuttle for operation get('jedi')
+Got a result shuttle for operation get('movie')
+Got a result shuttle for operation get('jedi')
+Got a result shuttle for operation get('movie')
+Got a result shuttle for operation get('jedi')
+Got a result shuttle for operation slice('jedi','0:4')
+Got a result shuttle for operation append('movie',' wars')
+Got a result shuttle for operation put('jedi','luke skywalker')
+Got a result shuttle for operation put('movie','star')
+Got a result shuttle for operation get('movie')
+Got a result shuttle for operation slice('jedi','0:4')
+Got a result shuttle for operation append('movie',' wars')
+Got a result shuttle for operation put('jedi','luke skywalker')
+Got a result shuttle for operation slice('jedi','0:4')
+Got a result shuttle for operation put('movie','star')
+Got a result shuttle for operation append('movie',' wars')
+Got a result shuttle for operation put('jedi','luke skywalker')
+Got a result shuttle for operation put('movie','star')
+
+Received result shuttle from : <Replica:86c10#node2> for operation : put('jedi','luke skywalker')
+Appending resultShulttle to cache of replica
+
+Received result shuttle from : <Replica:86c10#node2> for operation : append('movie',' wars')
+Appending resultShulttle to cache of replica
+
+Received result shuttle from : <Replica:86c10#node2> for operation : slice('jedi','0:4')
+Appending resultShulttle to cache of replica
+
+Received result shuttle from : <Replica:86c10#node2> for operation : get('movie')
+Appending resultShulttle to cache of replica
+
+Received result shuttle from : <Replica:86c10#node2> for operation : get('jedi')
+Appending resultShulttle to cache of replica

@@ -1,0 +1,6 @@
+
+Replica 9 setup done
+Running Replica 9
+Received message from Olympus : 
+ReplicaList [{'obj': {<Replica:d0c09#node2>}, 'id': 1}, {'obj': {<Replica:d0c0a#node2>}, 'id': 2}, {'obj': {<Replica:d0c0b#node2>}, 'id': 3}, {'obj': {<Replica:d0c0c#node2>}, 'id': 4}, {'obj': {<Replica:d0c0d#node2>}, 'id': 5}, {'obj': {<Replica:d0c0e#node2>}, 'id': 6}, {'obj': {<Replica:d0c0f#node2>}, 'id': 7}, {'obj': {<Replica:d0c10#node2>}, 'id': 8}, {'obj': {<Replica:d0c11#node2>}, 'id': 9}, {'obj': {<Replica:d0c12#node2>}, 'id': 10}, {'obj': {<Replica:d0c13#node2>}, 'id': 11}]
+clientList: [{'obj': {<Client:9100c#node3>}, 'id': 1}, {'obj': {<Client:9100d#node3>}, 'id': 2}, {'obj': {<Client:9100e#node3>}, 'id': 3}, {'obj': {<Client:9100f#node3>}, 'id': 4}, {'obj': {<Client:91010#node3>}, 'id': 5}, {'obj': {<Client:91011#node3>}, 'id': 6}, {'obj': {<Client:91012#node3>}, 'id': 7}, {'obj': {<Client:91013#node3>}, 'id': 8}, {'obj': {<Client:91014#node3>}, 'id': 9}, {'obj': {<Client:91015#node3>}, 'id': 10}]

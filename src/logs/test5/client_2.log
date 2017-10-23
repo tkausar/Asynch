@@ -1,0 +1,43 @@
+
+Client - 2 setup completed
+Running client Id - 2
+Received replica list and public keys from olympus
+
+Sending request put('jedi','luke skywalker') to head replica {<Replica:86c0f#node2>}
+	Encrypting request...
+	Awaiting for result....
+	Timeout for request put('jedi','luke skywalker')
+
+	Sending retransmit request to all replica for operation : put('jedi','luke skywalker')
+		Sending signed retransmit request to replica : {<Replica:86c0f#node2>}
+		Sending signed retransmit request to replica : {<Replica:86c10#node2>}
+		Sending signed retransmit request to replica : {<Replica:86c11#node2>}
+		Sending signed retransmit request to replica : {<Replica:86c12#node2>}
+		Sending signed retransmit request to replica : {<Replica:86c13#node2>}
+	Timeout for retransmission request for operation : put('jedi','luke skywalker')
+
+Sending request slice('jedi','0:4') to head replica {<Replica:86c0f#node2>}
+	Encrypting request...
+	Awaiting for result....
+	Timeout for request slice('jedi','0:4')
+
+	Sending retransmit request to all replica for operation : slice('jedi','0:4')
+		Sending signed retransmit request to replica : {<Replica:86c0f#node2>}
+		Sending signed retransmit request to replica : {<Replica:86c10#node2>}
+		Sending signed retransmit request to replica : {<Replica:86c11#node2>}
+		Sending signed retransmit request to replica : {<Replica:86c12#node2>}
+		Sending signed retransmit request to replica : {<Replica:86c13#node2>}
+	Timeout for retransmission request for operation : slice('jedi','0:4')
+
+Sending request get('jedi') to head replica {<Replica:86c0f#node2>}
+	Encrypting request...
+	Awaiting for result....
+	Timeout for request get('jedi')
+
+	Sending retransmit request to all replica for operation : get('jedi')
+		Sending signed retransmit request to replica : {<Replica:86c0f#node2>}
+		Sending signed retransmit request to replica : {<Replica:86c10#node2>}
+		Sending signed retransmit request to replica : {<Replica:86c11#node2>}
+		Sending signed retransmit request to replica : {<Replica:86c12#node2>}
+		Sending signed retransmit request to replica : {<Replica:86c13#node2>}
+	Timeout for retransmission request for operation : get('jedi')

@@ -1,0 +1,43 @@
+
+Client - 1 setup completed
+Running client Id - 1
+Received replica list and public keys from olympus
+
+Sending request put('movie','star') to head replica {<Replica:86c0f#node2>}
+	Encrypting request...
+	Awaiting for result....
+	Timeout for request put('movie','star')
+
+	Sending retransmit request to all replica for operation : put('movie','star')
+		Sending signed retransmit request to replica : {<Replica:86c0f#node2>}
+		Sending signed retransmit request to replica : {<Replica:86c10#node2>}
+		Sending signed retransmit request to replica : {<Replica:86c11#node2>}
+		Sending signed retransmit request to replica : {<Replica:86c12#node2>}
+		Sending signed retransmit request to replica : {<Replica:86c13#node2>}
+	Timeout for retransmission request for operation : put('movie','star')
+
+Sending request append('movie',' wars') to head replica {<Replica:86c0f#node2>}
+	Encrypting request...
+	Awaiting for result....
+	Timeout for request append('movie',' wars')
+
+	Sending retransmit request to all replica for operation : append('movie',' wars')
+		Sending signed retransmit request to replica : {<Replica:86c0f#node2>}
+		Sending signed retransmit request to replica : {<Replica:86c10#node2>}
+		Sending signed retransmit request to replica : {<Replica:86c11#node2>}
+		Sending signed retransmit request to replica : {<Replica:86c12#node2>}
+		Sending signed retransmit request to replica : {<Replica:86c13#node2>}
+	Timeout for retransmission request for operation : append('movie',' wars')
+
+Sending request get('movie') to head replica {<Replica:86c0f#node2>}
+	Encrypting request...
+	Awaiting for result....
+	Timeout for request get('movie')
+
+	Sending retransmit request to all replica for operation : get('movie')
+		Sending signed retransmit request to replica : {<Replica:86c0f#node2>}
+		Sending signed retransmit request to replica : {<Replica:86c10#node2>}
+		Sending signed retransmit request to replica : {<Replica:86c11#node2>}
+		Sending signed retransmit request to replica : {<Replica:86c12#node2>}
+		Sending signed retransmit request to replica : {<Replica:86c13#node2>}
+	Timeout for retransmission request for operation : get('movie')

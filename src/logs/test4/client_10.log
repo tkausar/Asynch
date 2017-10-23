@@ -1,0 +1,22 @@
+
+Generating pseudrorandom requests
+Client - 10 setup completed
+Running client Id - 10
+Received replica list and public keys from olympus
+
+Sending request append('d',' ttt') to head replica {<Replica:86c08#node2>}
+	Encrypting request...
+	Awaiting for result....
+	Received result:Fail from replica : <Replica:86c0e#node2>
+	Checking proof of misbehiour by checking signatures and hashes in result proof
+	Checked all signatures and hashes present in result proof for operation append('d',' ttt')
+	Received response for request append('d',' ttt')
+
+
+Sending request append('a',' zz') to head replica {<Replica:86c08#node2>}
+	Encrypting request...
+	Awaiting for result....
+	Received result:Fail from replica : <Replica:86c0e#node2>
+	Checking proof of misbehiour by checking signatures and hashes in result proof
+	Checked all signatures and hashes present in result proof for operation append('a',' zz')
+	Received response for request append('a',' zz')

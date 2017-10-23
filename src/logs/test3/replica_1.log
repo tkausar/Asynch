@@ -1,0 +1,102 @@
+
+Replica 1 setup done
+Running Replica 1
+Received message from Olympus : 
+ReplicaList [{'id': 1, 'obj': {<Replica:86c05#node2>}}, {'id': 2, 'obj': {<Replica:86c06#node2>}}, {'id': 3, 'obj': {<Replica:86c07#node2>}}]
+clientList: [{'id': 1, 'obj': {<Client:51004#node3>}}, {'id': 2, 'obj': {<Client:51005#node3>}}]
+
+Received signed request from client :<Client:51004#node3>
+Decrypted request: put('f','6000')
+Head Replica: Created slot number 1
+Processing request: put('f','6000')
+Processed request result: OK
+Created OrderProof with signed oredrStatement
+Creating a hash of result
+Created ResultProof with signed resultStatement
+Added operation to replica's history
+Appended orderProof and resultproof to shuttle
+Current Database : {'f': '6000'}
+Sending shuttle to next Replica : {<Replica:86c06#node2>} with request put('f','6000')
+
+Received signed request from client :<Client:51005#node3>
+Decrypted request: get('f')
+Head Replica: Created slot number 2
+Processing request: get('f')
+Processed request result: 6000
+Created OrderProof with signed oredrStatement
+Creating a hash of result
+Created ResultProof with signed resultStatement
+Added operation to replica's history
+Appended orderProof and resultproof to shuttle
+Current Database : {'f': '6000'}
+Sending shuttle to next Replica : {<Replica:86c06#node2>} with request get('f')
+
+Received result shuttle from : <Replica:86c06#node2> for operation : put('f','6000')
+Appending resultShulttle to cache of replica
+
+Received signed request from client :<Client:51004#node3>
+Decrypted request: put('d','800')
+Head Replica: Created slot number 3
+Processing request: put('d','800')
+Processed request result: OK
+Created OrderProof with signed oredrStatement
+Creating a hash of result
+Created ResultProof with signed resultStatement
+Added operation to replica's history
+Appended orderProof and resultproof to shuttle
+Current Database : {'d': '800', 'f': '6000'}
+Sending shuttle to next Replica : {<Replica:86c06#node2>} with request put('d','800')
+
+Received result shuttle from : <Replica:86c06#node2> for operation : get('f')
+Appending resultShulttle to cache of replica
+
+Received signed request from client :<Client:51005#node3>
+Decrypted request: append('d',' ttt')
+Head Replica: Created slot number 4
+Processing request: append('d',' ttt')
+Processed request result: OK
+Created OrderProof with signed oredrStatement
+Creating a hash of result
+Created ResultProof with signed resultStatement
+Added operation to replica's history
+Appended orderProof and resultproof to shuttle
+Current Database : {'d': '800 ttt', 'f': '6000'}
+Sending shuttle to next Replica : {<Replica:86c06#node2>} with request append('d',' ttt')
+
+Received result shuttle from : <Replica:86c06#node2> for operation : put('d','800')
+Appending resultShulttle to cache of replica
+
+Received signed request from client :<Client:51004#node3>
+Decrypted request: get('g')
+Head Replica: Created slot number 5
+Processing request: get('g')
+Processed request result: 
+Created OrderProof with signed oredrStatement
+Creating a hash of result
+Created ResultProof with signed resultStatement
+Added operation to replica's history
+Appended orderProof and resultproof to shuttle
+Current Database : {'d': '800 ttt', 'f': '6000'}
+Sending shuttle to next Replica : {<Replica:86c06#node2>} with request get('g')
+
+Received result shuttle from : <Replica:86c06#node2> for operation : append('d',' ttt')
+Appending resultShulttle to cache of replica
+
+Received result shuttle from : <Replica:86c06#node2> for operation : get('g')
+Appending resultShulttle to cache of replica
+
+Received signed request from client :<Client:51004#node3>
+Decrypted request: put('g','666')
+Head Replica: Created slot number 6
+Processing request: put('g','666')
+Processed request result: OK
+Created OrderProof with signed oredrStatement
+Creating a hash of result
+Created ResultProof with signed resultStatement
+Added operation to replica's history
+Appended orderProof and resultproof to shuttle
+Current Database : {'d': '800 ttt', 'g': '666', 'f': '6000'}
+Sending shuttle to next Replica : {<Replica:86c06#node2>} with request put('g','666')
+
+Received result shuttle from : <Replica:86c06#node2> for operation : put('g','666')
+Appending resultShulttle to cache of replica

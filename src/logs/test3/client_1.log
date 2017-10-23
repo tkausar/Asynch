@@ -1,0 +1,40 @@
+
+Generating pseudrorandom requests
+Client - 1 setup completed
+Running client Id - 1
+Received replica list and public keys from olympus
+
+Sending request put('f','6000') to head replica {<Replica:86c05#node2>}
+	Encrypting request...
+	Awaiting for result....
+	Received result:OK from replica : <Replica:86c07#node2>
+	Checking proof of misbehiour by checking signatures and hashes in result proof
+	Checked all signatures and hashes present in result proof for operation put('f','6000')
+	Received response for request put('f','6000')
+
+
+Sending request put('d','800') to head replica {<Replica:86c05#node2>}
+	Encrypting request...
+	Awaiting for result....
+	Received result:OK from replica : <Replica:86c07#node2>
+	Checking proof of misbehiour by checking signatures and hashes in result proof
+	Checked all signatures and hashes present in result proof for operation put('d','800')
+	Received response for request put('d','800')
+
+
+Sending request get('g') to head replica {<Replica:86c05#node2>}
+	Encrypting request...
+	Awaiting for result....
+	Received result: from replica : <Replica:86c07#node2>
+	Checking proof of misbehiour by checking signatures and hashes in result proof
+	Checked all signatures and hashes present in result proof for operation get('g')
+	Received response for request get('g')
+
+
+Sending request put('g','666') to head replica {<Replica:86c05#node2>}
+	Encrypting request...
+	Awaiting for result....
+	Received result:OK from replica : <Replica:86c07#node2>
+	Checking proof of misbehiour by checking signatures and hashes in result proof
+	Checked all signatures and hashes present in result proof for operation put('g','666')
+	Received response for request put('g','666')

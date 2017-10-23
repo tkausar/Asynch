@@ -1,0 +1,33 @@
+
+Client - 2 setup completed
+Running client Id - 2
+Received replica list and public keys from olympus
+
+Sending request put('jedi','luke skywalker') to head replica {<Replica:86c02#node2>}
+	Encrypting request...
+	Awaiting for result....
+	Received result:OK from replica : <Replica:86c04#node2>
+	Checking proof of misbehiour by checking signatures and hashes in result proof
+	Checked all signatures and hashes present in result proof for operation put('jedi','luke skywalker')
+	Got Expected Result
+	Received response for request put('jedi','luke skywalker')
+
+
+Sending request slice('jedi','0:4') to head replica {<Replica:86c02#node2>}
+	Encrypting request...
+	Awaiting for result....
+	Received result:OK from replica : <Replica:86c04#node2>
+	Checking proof of misbehiour by checking signatures and hashes in result proof
+	Checked all signatures and hashes present in result proof for operation slice('jedi','0:4')
+	Got Expected Result
+	Received response for request slice('jedi','0:4')
+
+
+Sending request get('jedi') to head replica {<Replica:86c02#node2>}
+	Encrypting request...
+	Awaiting for result....
+	Received result:luke from replica : <Replica:86c04#node2>
+	Checking proof of misbehiour by checking signatures and hashes in result proof
+	Checked all signatures and hashes present in result proof for operation get('jedi')
+	Not an expected result. Test Case Failed.
+	Received response for request get('jedi')
