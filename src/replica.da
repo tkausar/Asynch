@@ -260,29 +260,24 @@ class Replica(process):
    	operands = rest.split("'")
    	#self.f.write("operands are",operands)
    	if(operationType == "put"):
-   		#self.f.write(operands[1])
    		self.db[operands[1]] = operands[3]
-   		#print(self.db)
    		return "OK"
    	elif(operationType == "append"):
-   		#self.f.write("append")
    		if operands[1] not in self.db:
    			return "Fail"
    		else:
    			db[operands[1]] = db[operands[1]] + operands[3]
-   			#print(self.db)
    			return "OK"
    	elif(operationType == "slice"):
    		sliceRange=operands[3].split(":")
    		if operands[1] not in self.db:
    			return "Fail"
    		else:
+   			if (int(sliceRange[0]) < 0 or int(sliceRange[1]) >= len(db[operands[1]])):
+    				return "Fail"
    			db[operands[1]]=db[operands[1]][int(sliceRange[0]):int(sliceRange[1])]
-   			#print(self.db)
    			return "OK"
    	elif(operationType == "get"):
-   		#self.f.write("get")
-   		#print("get ka answer",self.db[rest])
    		if operands[1] in self.db:
    			return self.db[operands[1]]
    		else:
