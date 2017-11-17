@@ -48,6 +48,17 @@ class Olympus(process):
   		clientList.append(client)
   	return clientList;
 
+  #On getting reconfig request, olympus sends wedge reuest to all replicas	
+  def sendWedgeRequest():
+  	for each in replicaList:
+  		self.f.write("\nSending wedge request to replica " +  str(each["obj"]))
+  		send(('WedgeRequest',), to=each["obj"])
+
+  # any replica sends reconfig request
+  def receive(msg=('Reconfiguration-request',), from_=p):
+  	self.f.write("\nReceived reconfiguration request from replica " +  str(p))
+  	sendWedgeRequest()
+
   def sendReplicaListToClient():
   	self.f.write("\nSending list of replica and public key to all client")
   	for each in clientList:
@@ -64,6 +75,7 @@ class Olympus(process):
 	# Open file pointer for log file
   	self.f = open(logFilePath + 'olympus.log','w')
   	self.f.write("\nSetting up olympus....")
+  	self.responseFlag=False
 
 	#list of clientId-Key dictionary pairs
   	self.verifyKeyHexClientList = {}
@@ -85,4 +97,8 @@ class Olympus(process):
   	for each in self.replicaList:
   		start(each["obj"])
   	self.f.write("\nOlympus is started.")
-  	self.f.close()
+  	if await(self.responseFlag == True):
+   		output("Done")
+  	elif timeout(1):
+  		output("Closing log file")
+  		self.f.close()

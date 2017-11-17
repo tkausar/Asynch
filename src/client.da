@@ -16,6 +16,7 @@ class Client(process):
    	self.localDictionary = {}
    	self.isPseudorandom = False
    	self.expectedResultList = []
+   	self.exitFlag=False
   	# Creating a list of operations.
    	createRequestSequenceList(workloadList)
    	self.f.write("\nClient - " + str(clientId) + " setup completed")
@@ -119,4 +120,8 @@ class Client(process):
    	self.f.write("\nRunning client Id - " +  str(clientId))
    	await(self.setupFlag == True)
    	sendRequest()
-   	self.f.close()
+   	if await(self.exitFlag == True):
+   		output("Done")
+   	elif timeout(3):
+   		print("closing log file")
+   		self.f.close()
