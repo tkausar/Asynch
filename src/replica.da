@@ -357,6 +357,9 @@ class Replica(process):
    				self.f.write("\nSending shuttle to next Replica : " +  str(each["obj"]) + " with request " +  request["operation"])
    				send(('shuttlefromReplica',shuttle,request,slotnumber,), to=each["obj"])
 
+   def receive(msg=('WedgeRequest',),):
+   	send(('WedgedResponse', self.history,), to=self.olympus)
+
    def run():
    	self.f.write("\nRunning Replica " + str(replicaId))
    	await(self.setupFlag == True)
