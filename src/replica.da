@@ -63,14 +63,15 @@ class Replica(process):
    	return request
 
    # Handles result shuttle from successor and append it to respective cache and send it back to it's predecessor
-   def receive(msg=('ResultShuttle',resultProof), from_=p):
+   def receive(msg=('ResultShuttle',shuttle), from_=p):
+   	resultProof = shuttle["rproof"]
    	self.f.write("\n\nReceived result shuttle from : " + str(p) + " for operation : " + resultProof["operation"])
    	self.f.write("\nAppending resultShulttle to cache of replica")
    	self.cacheDict.append(resultProof)
    	self.resultShuttleFlag = True
    	if(isHead == False):
    		self.f.write("\nSending resultShuttle to previous replica : "+ str(self.replicaList[replicaId-2]["obj"]) + "\n")
-   		send(('ResultShuttle',resultProof,), to=self.replicaList[replicaId-2]["obj"])
+   		send(('ResultShuttle',shuttle,), to=self.replicaList[replicaId-2]["obj"])
 
    # Receives shuttle from previous replica. It performs follwing validation - 
    # 1. Checking history for slot number, sequence number for client Id
@@ -98,6 +99,9 @@ class Replica(process):
    				self.f.write("\nAppended orderProof and resultproof to shuttle")
    				self.f.write("\nCurrent Database : " + str(self.db))
    				request = changeOperationFail(config,request)
+   				if "checkpointproof" in shuttle:
+   					self.f.write("\nCreated and signed checkpoint statement of current running state and appended to checkpointproof")
+   					shuttle["checkpointproof"]["checkPointStatement"].append(createCheckPointStatement())	
    				sendRequest(request,shuttle,slotnumber)
    				if await(self.resultShuttleFlag == True):
                        			self.f.write("\nGot a result shuttle for operation " + request["operation"])
@@ -244,6 +248,13 @@ class Replica(process):
    		self.f.write("\nCurrent Database : " + str(self.db))
    		# check for change operation
    		request = changeOperationFail(config,request)
+   		if (self.slotnumber % 4 == 0):
+   			self.f.write("\nIntiating checkpoint at slotNumber" +  str(self.slotnumber))
+   			checkpointproof = {}
+   			checkpointproof["checkPointStatement"] = []
+   			checkpointproof["checkPointStatement"].append(createCheckPointStatement())
+   			self.f.write("\nCreated and signed checkpoint statement of current running state")
+   			shuttle["checkpointproof"] = checkpointproof
    		sendRequest(request,shuttle,self.slotnumber)
    		self.f.write("\nWaiting for result shuttle...")
    		if await(self.resultShuttleFlag == True):
@@ -252,7 +263,6 @@ class Replica(process):
     			self.f.write("\nHead replica timeout for operation : " + request["operation"])
     			self.f.write("\nSending Reconfig request to olympus " + str(self.olympus))
     			send(('Reconfiguration-request',), to=self.olympus)
-
 
    def createOrderProof(request,slotNumber):
    	proof = {}
@@ -289,6 +299,9 @@ class Replica(process):
    	order["value"] = value
    	self.f.write("\nCreating a hash of result")
    	return signedData(order)
+
+   def createCheckPointStatement():
+        return signedData(self.db)
 
    # Get signed statement
    def signedData(statement):
@@ -350,7 +363,9 @@ class Replica(process):
    		self.f.write("\nSending ResultProof and result to client : " + str(self.clientList[request["clientId"]-1]["obj"]))
    		send(('Result', shuttle["rproof"], shuttle["rproof"]["result"],), to=self.clientList[request["clientId"]-1]["obj"])
    		self.f.write("\nSending Result Shuttle to previous replica : " + str(self.replicaList[replicaId-2]["obj"]))
-   		send(('ResultShuttle', shuttle["rproof"],), to=self.replicaList[replicaId-2]["obj"])
+   		if "checkpointproof" in shuttle:
+   			self.f.write("\nValidated checkpoint proof and forwarding completed checkpoint proof")
+   		send(('ResultShuttle', shuttle,), to=self.replicaList[replicaId-2]["obj"])
    	else:
    		for each in self.replicaList:
    			if(each["id"] == replicaId+1):
