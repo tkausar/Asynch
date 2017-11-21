@@ -1,0 +1,25 @@
+
+Replica 1 setup done
+Running Replica 1
+Received message from Olympus : 
+ReplicaList [{'id': 1, 'obj': {<Replica:86002#node2>}}, {'id': 2, 'obj': {<Replica:86003#node2>}}, {'id': 3, 'obj': {<Replica:86004#node2>}}]
+clientList: [{'id': 1, 'obj': {<Client:04002#node3>}}]
+
+Received signed request from client :<Client:04002#node3>
+Decrypted request: put('movie','star')
+Head Replica: Created slot number 1
+Processing request: put('movie','star')
+Created OrderProof with signed oredrStatement
+Creating a hash of result
+Created ResultProof with signed resultStatement
+Added operation to replica's history
+Appended orderProof and resultproof to shuttle
+Current Database : {'movie': 'star'}
+Sending shuttle to next Replica : {<Replica:86003#node2>} with request get('x')
+Waiting for result shuttle...
+Head replica timeout for operation : get('x')
+Sending Reconfig request to olympus <Olympus:55002#node1>
+
+Received retransmit signed request from client :<Client:04002#node3>
+Decrypted request: put('movie','star')
+Checking in replica's cache...

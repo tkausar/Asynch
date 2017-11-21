@@ -1,104 +1,180 @@
 import sys
 import nacl.encoding
 import nacl.signing
+import itertools
 Replica = import_da('replica')
 Client = import_da('client')
 replicaList = []
 clientList = []
 class Olympus(process):
 
-  # To generate Signed key fro all replica and client
-  def generateSignKey():
-  	#returns signing_key and verify_key_hex
-  	signing_key = nacl.signing.SigningKey.generate() #Generating a new random signing key for client	
-  	verify_key = signing_key.verify_key	# Generating the verify key for the above signing key
-  	verify_key_hex = verify_key.encode(encoder=nacl.encoding.HexEncoder)	# Serialize the verify key to send it to a third party
-  	keyPair = {}
-  	keyPair["signing_key"] = signing_key
-  	keyPair["verify_key_hex"] = verify_key_hex
-  	return keyPair
+	def log(logString):
+		self.logBuffer+=logString
+		if(len(self.logBuffer)>0):
+			self.f = open(logFilePath + 'olympus.log','a+')
+			self.f.write(self.logBuffer)
+			self.f.close()
+			self.logBuffer=""
+			
 
-  def getReplicaList(t):
-  	numberOfReplica = (2*t) + 1;
-  	for counter in range(1,numberOfReplica+1):
-  		keyPair = generateSignKey()
-  		if(counter == 1):
-  			r = new(Replica.Replica, args=(counter, True, False,keyPair["signing_key"],config,logFilePath,), at='node2')
-  		elif (counter == numberOfReplica):
-  			 r = new(Replica.Replica, args=(counter, False, True, keyPair["signing_key"],config,logFilePath,), at='node2')
-  		else:
-  			 r = new(Replica.Replica, args=(counter, False, False, keyPair["signing_key"],config,logFilePath,), at='node2')
-  		self.verifyKeyHexReplicaList[counter] = keyPair["verify_key_hex"]
-  		replica = {}
-  		replica["id"] = counter
-  		replica["obj"] = r
-  		replicaList.append(replica)
-  	return replicaList;
+	# To generate Signed key fro all replica and client
+	def generateSignKey():
+		#returns signing_key and verify_key_hex
+		signing_key = nacl.signing.SigningKey.generate() #Generating a new random signing key for client	
+		verify_key = signing_key.verify_key	# Generating the verify key for the above signing key
+		verify_key_hex = verify_key.encode(encoder=nacl.encoding.HexEncoder)	# Serialize the verify key to send it to a third party
+		keyPair = {}
+		keyPair["signing_key"] = signing_key
+		keyPair["verify_key_hex"] = verify_key_hex
+		return keyPair
 
-  def getClientList(count):
-  	for counter in range(1,count+1):
-  		keyPair = generateSignKey()
-  		workloadKey = 'workload[' + str(counter-1) + ']'
-  		c = new(Client.Client, args=(counter, config[workloadKey], keyPair["signing_key"],config,logFilePath,), at='node3')
-  		# Creating a client and signature mapping
-  		self.verifyKeyHexClientList[counter]= keyPair["verify_key_hex"]
-  		client = {}
-  		client["id"] = counter
-  		client["obj"] = c
-  		clientList.append(client)
-  	return clientList;
+	def getReplicaList(t):
+		numberOfReplica = (2*t) + 1;
+		for counter in range(1,numberOfReplica+1):
+			keyPair = generateSignKey()
+			if(counter == 1):
+				r = new(Replica.Replica, args=(counter, True, False,keyPair["signing_key"],config,logFilePath,), at='node2')
+			elif (counter == numberOfReplica):
+				 r = new(Replica.Replica, args=(counter, False, True, keyPair["signing_key"],config,logFilePath,), at='node2')
+			else:
+				 r = new(Replica.Replica, args=(counter, False, False, keyPair["signing_key"],config,logFilePath,), at='node2')
+			self.verifyKeyHexReplicaList[counter] = keyPair["verify_key_hex"]
+			replica = {}
+			replica["id"] = counter
+			replica["obj"] = r
+			replicaList.append(replica)
+		return replicaList;
 
-  #On getting reconfig request, olympus sends wedge reuest to all replicas	
-  def sendWedgeRequest():
-  	for each in replicaList:
-  		self.f.write("\nSending wedge request to replica " +  str(each["obj"]))
-  		send(('WedgeRequest',), to=each["obj"])
+	def getClientList(count):
+		for counter in range(1,count+1):
+			keyPair = generateSignKey()
+			workloadKey = 'workload[' + str(counter-1) + ']'
+			c = new(Client.Client, args=(counter, config[workloadKey], keyPair["signing_key"],config,logFilePath,), at='node3')
+			# Creating a client and signature mapping
+			self.verifyKeyHexClientList[counter]= keyPair["verify_key_hex"]
+			client = {}
+			client["id"] = counter
+			client["obj"] = c
+			clientList.append(client)
+		return clientList;
 
-  # any replica sends reconfig request
-  def receive(msg=('Reconfiguration-request',), from_=p):
-  	self.f.write("\nReceived reconfiguration request from replica " +  str(p))
-  	sendWedgeRequest()
+	#On getting reconfig request, olympus sends wedge reuest to all replicas	
+	def sendWedgeRequest():
+		for each in replicaList:
+			log("\nSending wedge request to replica " +  str(each["obj"]))
+			send(('WedgeRequest',), to=each["obj"])
+			
 
-  def sendReplicaListToClient():
-  	self.f.write("\nSending list of replica and public key to all client")
-  	for each in clientList:
-  		self.f.write("\nSending list of replica and public key to client - " +  str(each["obj"]))
-  		send(('setupClient',replicaList,self.verifyKeyHexClientList,self.verifyKeyHexReplicaList,), to=each["obj"])
+	def receive(msg=('WedgedStatement',replicaId, history,),from_=r):
+		log("\nReceived wedge statement from "+ str(r))
+		self.wedgedStatementList[replicaId] = history
+		self.countResponse+=1
+		log("\nAdded history of replica "+str(replicaId)+" to wedge statement list")
+		
+	def hasValidWedgedMessage(quorum):
+		for replicaId in quorum:
+			if(replicaId not in wedgedStatementList):
+				log("\nHistory of replicaId "+str(replicaId)+" is not yet received")
+				return False
+		historySet = {}
+		for replicaId in quorum:
+			#output("\n"+str(wedgedStatementList[replicaId]))
+			for orderProof in wedgedStatementList[replicaId]:
+				#output("\n"+str(orderProof))
+				slotNumber = orderProof['slotNumber']
+				if(slotNumber not in historySet):
+					historySet[slotNumber] = orderProof['seqNo']
+				else:
+					if(historySet[slotNumber]!=orderProof['seqNo']):
+						log("\nhistorySet[slotNumber] = "+ str(historySet[slotNumber])+ "orderProof[seqNo]=" + str(orderProof['seqNo']))
+						log("\nQuorum "+ str(quorum)+ " is inconsistent!!!")
+						return False
+				#output("\nHistorySet = "+ str(historySet))
+		log("\nFound consistent quorum")
+		return True		
+	
+	# any replica sends reconfig request
+	def receive(msg=('Reconfiguration-request',), from_ = p):
+		log("\n\nReceived reconfiguration request from replica " +  str(p))
+		log("\nSending wedge request to all replicas .....")
+		sendWedgeRequest()
+		
+		#await till t+1 responses to initiate consistency check
+		if await(self.countResponse==config["t"]+1):
+			log("\n\nReceived wedge statement from t+1 replicas : ")
+		log("\n" + str(wedgedStatementList))
+		
+		#validate wedge statement messages
+		log("\n\nValidating wedged messages....")
+		validQuorum=()
+		for quorum in quorumList:
+			if(hasValidWedgedMessage(quorum)):
+				validQuorum = quorum
+				break
+			else:
+				log("\nChecking next quorum for validity of wedged messages....")
+				continue
+				
+		if(len(validQuorum)!=0):
+			log("\nFound quorum with valid wedged messages. ValidQuorum = "+ str(validQuorum))
+		else:
+			log("\nNo valid quorum found!!! ")
 
-  def sendReplicaListToReplica():
-  	self.f.write("\nSending list of clients, replica and public keys to all replica")
-  	for each in replicaList:
-  		self.f.write("\nSending list of replica and public key to replica - " +  str(each["obj"]))
-  		send(('setupReplica',replicaList,clientList,self.verifyKeyHexClientList,self.verifyKeyHexReplicaList,), to=each["obj"])
+	def sendReplicaListToClient():
+		self.f.write("\nSending list of replica and public key to all client")
+		for each in clientList:
+			self.f.write("\nSending list of replica and public key to client - " +  str(each["obj"]))
+			send(('setupClient',replicaList,self.verifyKeyHexClientList,self.verifyKeyHexReplicaList,), to=each["obj"])
 
-  def setup(config,logFilePath):
-	# Open file pointer for log file
-  	self.f = open(logFilePath + 'olympus.log','w')
-  	self.f.write("\nSetting up olympus....")
-  	self.responseFlag=False
+	def sendReplicaListToReplica():
+		self.f.write("\nSending list of clients, replica and public keys to all replica")
+		for each in replicaList:
+			self.f.write("\nSending list of replica and public key to replica - " +  str(each["obj"]))
+			send(('setupReplica',replicaList,clientList,self.verifyKeyHexClientList,self.verifyKeyHexReplicaList,), to=each["obj"])
 
-	#list of clientId-Key dictionary pairs
-  	self.verifyKeyHexClientList = {}
-  	self.verifyKeyHexReplicaList = {}
+	def createQuorumList(t):
+		numberOfReplica = (2*t) + 1;
+		quorumLen = t+1;
+		self.quorumList = list(itertools.combinations(range(1,numberOfReplica+1), quorumLen))
+		self.f.write("\nCreated quorumList as "+str(self.quorumList))
+	
+	def setup(config,logFilePath):
+		# Open file pointer for log file
+		self.f = open(logFilePath + 'olympus.log','w')
+		self.f.write("\nSetting up olympus....")
+		self.responseFlag=False
+		self.wedgedStatementList = {}
+		self.countResponse = 0
+		self.quorumList = []
+		self.logBuffer = ""
 
-  	self.f.write("\nSetting up all Replica...")
-  	self.replicaList = getReplicaList(config["t"])
+		#creating quorumList
+		self.f.write("\nCreating quorumList")
+		createQuorumList(config["t"])
+		
+		#list of clientId-Key dictionary pairs
+		self.verifyKeyHexClientList = {}
+		self.verifyKeyHexReplicaList = {}
 
-  	self.f.write("\nSetting up all client....")
-  	self.clientList = getClientList(config["num_client"])
+		self.f.write("\nSetting up all Replica...")
+		self.replicaList = getReplicaList(config["t"])
 
-  	self.f.write("\nSetting up all private and public keys....")
-  	sendReplicaListToClient()
-  	sendReplicaListToReplica()
- 
-  def run():
-  	for each in self.clientList:
-                start(each["obj"])
-  	for each in self.replicaList:
-  		start(each["obj"])
-  	self.f.write("\nOlympus is started.")
-  	if await(self.responseFlag == True):
-   		output("Done")
-  	elif timeout(1):
-  		output("Closing log file")
-  		self.f.close()
+		self.f.write("\nSetting up all client....")
+		self.clientList = getClientList(config["num_client"])
+
+		self.f.write("\nSetting up all private and public keys....")
+		sendReplicaListToClient()
+		sendReplicaListToReplica()
+
+	def run():
+		for each in self.clientList:
+			start(each["obj"])
+		for each in self.replicaList:
+			start(each["obj"])
+		self.f.write("\nOlympus is started.")
+		self.f.close()
+		if await(self.responseFlag == True):
+			output("Done")
+		#elif timeout(3):
+		#	output("Closing log file")
+		#	self.f.close()

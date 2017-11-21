@@ -1,0 +1,14 @@
+
+Replica 2 setup done
+Running Replica 2
+Received message from Olympus : 
+ReplicaList [{'id': 1, 'obj': {<Replica:86002#node2>}}, {'id': 2, 'obj': {<Replica:86003#node2>}}, {'id': 3, 'obj': {<Replica:86004#node2>}}]
+clientList: [{'id': 1, 'obj': {<Client:04002#node3>}}]
+
+Received shuttle from previous replica : <Replica:86002#node2> for operation : get('x')
+Checked history for slot number : 1 and sequence number : 1
+Checked validity of order statement
+Processing request: get('x')
+Checked validity of result statement
+Result Proof validty failed... Proof of misbehiviour
+ Sending reconfiguration request to Olympus

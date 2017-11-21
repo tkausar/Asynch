@@ -1,0 +1,1 @@
+python3 -m da -n node0 init.da ../config/%1.txt
