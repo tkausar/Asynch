@@ -5,6 +5,14 @@ import json
 from nacl.bindings.utils import sodium_memcmp
 class Replica(process):
 
+	def log(logString):
+		self.logBuffer+=logString
+		if(len(self.logBuffer)>0):
+			self.f = open(logFilePath + 'replica_'+ str(replicaId) + '.log','a+')
+			self.f.write(self.logBuffer)
+			self.f.close()
+			self.logBuffer=""
+
 	# setup is called by olympus with sepcifiying the replica type - head/tail and private key of respective replica. 
 	def setup(replicaId,isHead,isTail,signingKey,config,logFilePath):
 		self.f = open(logFilePath + 'replica_'+ str(replicaId) + '.log','w')
@@ -21,6 +29,7 @@ class Replica(process):
 		self.verifyKeyHexReplicaList= {}
 		self.changeResult = False
 		self.olympus = {}
+		self.logBuffer=""
 		self.f.write("\nReplica " + str(replicaId) +" setup done")
 
 	# Message from olympus to intialize all variables.
@@ -35,7 +44,7 @@ class Replica(process):
 		self.verifyKeyHexReplicaList=verifyKeyHexReplicaList
 		self.setupFlag = True
 		self.olympus = p
-		self.f.write("\nReceived message from Olympus : \nReplicaList "+ str(replicaList)+ "\nclientList: "+ str(clientList))
+		log("\nReceived message from Olympus : \nReplicaList "+ str(replicaList)+ "\nclientList: "+ str(clientList))
 
 	def changeOperationFail(config, request):
 		failure = "failures" + "[0," + str(replicaId) + "]"
@@ -65,12 +74,12 @@ class Replica(process):
 	# Handles result shuttle from successor and append it to respective cache and send it back to it's predecessor
 	def receive(msg=('ResultShuttle',shuttle), from_=p):
 		resultProof = shuttle["rproof"]
-		self.f.write("\n\nReceived result shuttle from : " + str(p) + " for operation : " + resultProof["operation"])
-		self.f.write("\nAppending resultShulttle to cache of replica")
+		log("\n\nReceived result shuttle from : " + str(p) + " for operation : " + resultProof["operation"])
+		log("\nAppending resultShulttle to cache of replica")
 		self.cacheDict.append(resultProof)
 		self.resultShuttleFlag = True
 		if(isHead == False):
-			self.f.write("\nSending resultShuttle to previous replica : "+ str(self.replicaList[replicaId-2]["obj"]) + "\n")
+			log("\nSending resultShuttle to previous replica : "+ str(self.replicaList[replicaId-2]["obj"]) + "\n")
 			send(('ResultShuttle',shuttle,), to=self.replicaList[replicaId-2]["obj"])
 
 	# Receives shuttle from previous replica. It performs follwing validation - 
@@ -81,39 +90,39 @@ class Replica(process):
 	# 5. Create a orderproof and resultProof and append it to shuttle
 	# 6. Send shuttle to next replica
 	def receive(msg=('shuttlefromReplica',shuttle,request,slotnumber,), from_=p):
-		self.f.write("\n\nReceived shuttle from previous replica : "+ str(p) + " for operation : " + request["operation"])
-		self.f.write("\nChecked history for slot number : " + str(slotnumber) + " and " + "sequence number : " + str(request["seqNo"] ))
+		log("\n\nReceived shuttle from previous replica : "+ str(p) + " for operation : " + request["operation"])
+		log("\nChecked history for slot number : " + str(slotnumber) + " and " + "sequence number : " + str(request["seqNo"] ))
 		if(checkHistory(slotnumber, request["seqNo"],request["clientId"]) == False):
-			self.f.write("\nChecked validity of order statement")
+			log("\nChecked validity of order statement")
 			if( checkValidityOfOrderStatement(shuttle["oproof"]) == True):
-				self.f.write("\nProcessing request: " + request["operation"])
+				log("\nProcessing request: " + request["operation"])
 				result = processRequest(request["operation"])
 				if(self.changeResult == True):
 					result = "OK"
 				self.changeResult = False
-				self.f.write("\nChecked validity of result statement")
+				log("\nChecked validity of result statement")
 				if( checkResultValidity(shuttle["rproof"], result) == True ):
 					createHistoryTuple(slotnumber,request["seqNo"],request["clientId"])
 					shuttle["oproof"]["orderStatement"].append(createOdrerStatement(slotnumber,request["seqNo"]))
 					shuttle["rproof"]["resultStatement"].append(createResultStatement(slotnumber,request["seqNo"],result))
-					self.f.write("\nAppended orderProof and resultproof to shuttle")
-					self.f.write("\nCurrent Database : " + str(self.db))
+					log("\nAppended orderProof and resultproof to shuttle")
+					log("\nCurrent Database : " + str(self.db))
 					request = changeOperationFail(config,request)
 					if "checkpointproof" in shuttle:
-						self.f.write("\nCreated and signed checkpoint statement of current running state and appended to checkpointproof")
+						log("\nCreated and signed checkpoint statement of current running state and appended to checkpointproof")
 						shuttle["checkpointproof"]["checkPointStatement"].append(createCheckPointStatement())	
 					sendRequest(request,shuttle,slotnumber)
 					if await(self.resultShuttleFlag == True):
-									self.f.write("\nGot a result shuttle for operation " + request["operation"])
+									log("\nGot a result shuttle for operation " + request["operation"])
 					elif timeout(float(config["nonhead_timeout"])):
-									self.f.write("\nNon-head replica timeout for operation : " + request["operation"])
-									self.f.write("\nSending Reconfig request to olympus")
+									log("\nNon-head replica timeout for operation : " + request["operation"])
+									log("\nSending Reconfig request to olympus")
 									send(('Reconfiguration-request',), to=self.olympus)
 				else:
-					self.f.write("\nResult Proof validty failed... Proof of misbehiviour\n Sending reconfiguration request to Olympus")
+					log("\nResult Proof validty failed... Proof of misbehiviour\n Sending reconfiguration request to Olympus")
 					send(('Reconfiguration-request',), to=self.olympus)
 			else:
-					self.f.write("\nOrder statement validty failed... Proof of misbehiviour")
+					log("\nOrder statement validty failed... Proof of misbehiviour")
 					send(('Reconfiguration-request',), to=self.olympus)
 		else:
 			send(('Reconfiguration-request',), to=self.olympus)
@@ -164,59 +173,59 @@ class Replica(process):
 	#			       b> Retransmit request to head replica  
 	def receive(msg=('Retransmit',signedRequest,clientId,),from_=client):
 		request = decryptClientRequest(signedRequest,clientId)
-		self.f.write("\n\nReceived retransmit signed request from client :"+ str(client))
-		self.f.write("\nDecrypted request: "+ request["operation"])
+		log("\n\nReceived retransmit signed request from client :"+ str(client))
+		log("\nDecrypted request: "+ request["operation"])
 		isFound = False
-		self.f.write("\nChecking in replica's cache...")
+		log("\nChecking in replica's cache...")
 		for resultProof in self.cacheDict:
 			if (resultProof["sequenceNumber"] == request["seqNo"]  and resultProof["clientId"] == clientId):
-				self.f.write('\nFound operation: "+ request["operation"] +" in cache')
+				log('\nFound operation: "+ request["operation"] +" in cache')
 				send(('Result', resultProof, resultProof["result"],), to=client)
 				isFound = True
 		if(isFound == False and isHead == False):
-			self.f.write("Can't find in entry in cache of replica. Retransmit request To Head for operation :" + request["operation"])
+			log("Can't find in entry in cache of replica. Retransmit request To Head for operation :" + request["operation"])
 			send(('RetransmitToHead',signedRequest,clientId,), to=self.replicaList[0]["obj"])
-			self.f.write("\nAwaiting for result shuttle...")
+			log("\nAwaiting for result shuttle...")
 			if await(self.resultShuttleFlag == True):
-				self.f.write("\nGot a result shuttle for operation " + request["operation"])
+				log("\nGot a result shuttle for operation " + request["operation"])
 			elif timeout(float(config["nonhead_timeout"])):
-				self.f.write("\nNon-head replica timeout for operation : " + request["operation"])
-				self.f.write("\nSending Reconfig request to olympus")
+				log("\nNon-head replica timeout for operation : " + request["operation"])
+				log("\nSending Reconfig request to olympus")
 				send(('Reconfiguration-request',), to=self.olympus)
 
 	# Request from replica from timeout to head replica
 	def receive(msg=('RetransmitToHead',signedRequest,clientId,), from_=replica):
 		request = decryptClientRequest(signedRequest,clientId)
-		self.f.write("\n\nReceived retransmit signed request from replica :"+ str(replica))
-		self.f.write("\nDecrypted request: "+ request["operation"])
+		log("\n\nReceived retransmit signed request from replica :"+ str(replica))
+		log("\nDecrypted request: "+ request["operation"])
 		slotNumber = checkHistoryClient(request["seqNo"],request["clientId"])
 		if(slotNumber != -1):
-			self.f.write("\nAwaiting for result shuttle...")
+			log("\nAwaiting for result shuttle...")
 			if await(self.resultShuttleFlag == True):
-				self.f.write("\nGot a result shuttle for operation " + request["operation"])
+				log("\nGot a result shuttle for operation " + request["operation"])
 			elif timeout(float(config["head_timeout"])):
-				self.f.write("\nHead replica timeout for operation : " + request["operation"])
-				self.f.write("\nSending Reconfig request to olympus")
+				log("\nHead replica timeout for operation : " + request["operation"])
+				log("\nSending Reconfig request to olympus")
 				send(('Reconfiguration-request',), to=self.olympus)
 		else:
-			self.f.write("\nCan not find retransmitted request in head replica history.So recreating a new request....")
+			log("\nCan not find retransmitted request in head replica history.So recreating a new request....")
 			self.slotnumber += 1
 			shuttle = {}
-			self.f.write("\nHead Replica: Created slot number " + str(self.slotnumber))
-			self.f.write("\nProcessing request: " + request["operation"])
+			log("\nHead Replica: Created slot number " + str(self.slotnumber))
+			log("\nProcessing request: " + request["operation"])
 			result = processRequest(request["operation"])
-			self.f.write("\nProcessed request result: "+ result)
+			log("\nProcessed request result: "+ result)
 			oproof = createOrderProof(request, self.slotnumber)
 			rproof = createResultProof(request, self.slotnumber, result)
 			oproof["orderStatement"].append(createOdrerStatement(self.slotnumber,request["seqNo"]))
-			self.f.write("\nCreated OrderProof with signed oredrStatement")
+			log("\nCreated OrderProof with signed oredrStatement")
 			rproof["resultStatement"].append(createResultStatement(self.slotnumber, request["seqNo"],result))
-			self.f.write("\nCreated ResultProof with signed resultStatement")
+			log("\nCreated ResultProof with signed resultStatement")
 			shuttle["oproof"] = oproof
 			shuttle["rproof"] = rproof
 			createHistoryTuple(self.slotnumber,request["seqNo"],request["clientId"])
-			self.f.write("\nAppended orderProof and resultproof to shuttle")
-			self.f.write("\nCurrent Database : " + str(self.db))
+			log("\nAppended orderProof and resultproof to shuttle")
+			log("\nCurrent Database : " + str(self.db))
 			sendRequest(request,shuttle,self.slotnumber)
 
 	# Request from client
@@ -224,13 +233,13 @@ class Replica(process):
 		self.changeResult = False
 		self.resultShuttleFlag = False
 		request = decryptClientRequest(signedRequest,clientId)
-		self.f.write("\n\nReceived signed request from client :"+ str(client))
-		self.f.write("\nDecrypted request: "+ request["operation"])
+		log("\n\nReceived signed request from client :"+ str(client))
+		log("\nDecrypted request: "+ request["operation"])
 		if(isHead == True):
 			self.slotnumber += 1
 			shuttle = {}
-			self.f.write("\nHead Replica: Created slot number " + str(self.slotnumber))
-			self.f.write("\nProcessing request: " + request["operation"])
+			log("\nHead Replica: Created slot number " + str(self.slotnumber))
+			log("\nProcessing request: " + request["operation"])
 			result = processRequest(request["operation"])
 			if(self.changeResult == True):
 				result = "OK"
@@ -238,30 +247,30 @@ class Replica(process):
 			oproof = createOrderProof(request, self.slotnumber)
 			rproof = createResultProof(request, self.slotnumber, result)
 			oproof["orderStatement"].append(createOdrerStatement(self.slotnumber,request["seqNo"]))
-			self.f.write("\nCreated OrderProof with signed oredrStatement")
+			log("\nCreated OrderProof with signed oredrStatement")
 			rproof["resultStatement"].append(createResultStatement(self.slotnumber, request["seqNo"],result))
-			self.f.write("\nCreated ResultProof with signed resultStatement")
+			log("\nCreated ResultProof with signed resultStatement")
 			shuttle["oproof"] = oproof
 			shuttle["rproof"] = rproof
 			createHistoryTuple(self.slotnumber,request["seqNo"],request["clientId"])
-			self.f.write("\nAppended orderProof and resultproof to shuttle")
-			self.f.write("\nCurrent Database : " + str(self.db))
+			log("\nAppended orderProof and resultproof to shuttle")
+			log("\nCurrent Database : " + str(self.db))
 			# check for change operation
 			request = changeOperationFail(config,request)
 			if (self.slotnumber % 4 == 0):
-				self.f.write("\nIntiating checkpoint at slotNumber" +  str(self.slotnumber))
+				log("\nIntiating checkpoint at slotNumber" +  str(self.slotnumber))
 				checkpointproof = {}
 				checkpointproof["checkPointStatement"] = []
 				checkpointproof["checkPointStatement"].append(createCheckPointStatement())
-				self.f.write("\nCreated and signed checkpoint statement of current running state")
+				log("\nCreated and signed checkpoint statement of current running state")
 				shuttle["checkpointproof"] = checkpointproof
 			sendRequest(request,shuttle,self.slotnumber)
-			self.f.write("\nWaiting for result shuttle...")
+			log("\nWaiting for result shuttle...")
 			if await(self.resultShuttleFlag == True):
-					self.f.write("\nGot a result shuttle for operation in head replica " + request["operation"])
+					log("\nGot a result shuttle for operation in head replica " + request["operation"])
 			elif timeout(float(config["head_timeout"])):
-					self.f.write("\nHead replica timeout for operation : " + request["operation"])
-					self.f.write("\nSending Reconfig request to olympus " + str(self.olympus))
+					log("\nHead replica timeout for operation : " + request["operation"])
+					log("\nSending Reconfig request to olympus " + str(self.olympus))
 					send(('Reconfiguration-request',), to=self.olympus)
 
 	def createOrderProof(request,slotNumber):
@@ -297,7 +306,7 @@ class Replica(process):
 		order["slotNumber"] = slotnumber
 		order["sequenceNumber"] = sequenceNumber
 		order["value"] = value
-		self.f.write("\nCreating a hash of result")
+		log("\nCreating a hash of result")
 		return signedData(order)
 
 	def createCheckPointStatement():
@@ -314,7 +323,7 @@ class Replica(process):
 		h["slotNumber"] = slotNumber
 		h["clientId"] = clientId
 		self.history.append(h)
-		self.f.write("\nAdded operation to replica's history")
+		log("\nAdded operation to replica's history")
 
 	def checkHistory(slotNumber,sequenceNumber,clientId):
 		for h in self.history:
@@ -360,27 +369,28 @@ class Replica(process):
 	def sendRequest(request,shuttle,slotnumber):
 		if (isTail == True):
 			self.resultShuttleFlag = True
-			self.f.write("\nSending ResultProof and result to client : " + str(self.clientList[request["clientId"]-1]["obj"]))
+			log("\nSending ResultProof and result to client : " + str(self.clientList[request["clientId"]-1]["obj"]))
 			send(('Result', shuttle["rproof"], shuttle["rproof"]["result"],), to=self.clientList[request["clientId"]-1]["obj"])
-			self.f.write("\nSending Result Shuttle to previous replica : " + str(self.replicaList[replicaId-2]["obj"]))
+			log("\nSending Result Shuttle to previous replica : " + str(self.replicaList[replicaId-2]["obj"]))
 			if "checkpointproof" in shuttle:
-				self.f.write("\nValidated checkpoint proof and forwarding completed checkpoint proof")
+				log("\nValidated checkpoint proof and forwarding completed checkpoint proof")
 			send(('ResultShuttle', shuttle,), to=self.replicaList[replicaId-2]["obj"])
 		else:
 			for each in self.replicaList:
 				if(each["id"] == replicaId+1):
-					self.f.write("\nSending shuttle to next Replica : " +  str(each["obj"]) + " with request " +  request["operation"])
+					log("\nSending shuttle to next Replica : " +  str(each["obj"]) + " with request " +  request["operation"])
 					send(('shuttlefromReplica',shuttle,request,slotnumber,), to=each["obj"])
 
 	def receive(msg=('WedgeRequest',),from_=oly):
 		send(('WedgedStatement', replicaId, self.history,), to=oly)
-		self.f.write("\nSent wedge response to Olympus" + str(oly))
+		log("\nSent wedge response to Olympus" + str(oly))
 
 	def run():
 		self.f.write("\nRunning Replica " + str(replicaId))
+		self.f.close()
 		await(self.setupFlag == True)
 		if await(self.responseFlag == True):
 			output("Done")
-		elif timeout(1):
-			output("Closing log file")
-			self.f.close()
+		#elif timeout(1):
+		#	output("Closing log file")
+		#	self.f.close()
