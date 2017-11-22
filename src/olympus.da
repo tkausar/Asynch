@@ -60,24 +60,24 @@ class Olympus(process):
 	#On getting reconfig request, olympus sends wedge reuest to all replicas	
 	def sendWedgeRequest():
 		for each in replicaList:
-			log("\nSending wedge request to replica " +  str(each["obj"]))
+			log("\n Sending wedge request to replica " +  str(each["obj"]))
 			send(('WedgeRequest',), to=each["obj"])
 			
 
-	def receive(msg=('WedgedStatement',replicaId, history,),from_=r):
+	def receive(msg=('WedgedStatement',replicaId, history,runningState,),from_=r):
 		log("\nReceived wedge statement from "+ str(r))
 		self.wedgedStatementList[replicaId] = history
 		self.countResponse+=1
-		log("\nAdded history of replica "+str(replicaId)+" to wedge statement list")
+		log("\n Added history of replica "+str(replicaId)+" to wedge statement list")
 		
 	def hasValidWedgedMessage(quorum):
 		for replicaId in quorum:
 			if(replicaId not in self.wedgedStatementList):
-				log("\nHistory of replicaId "+str(replicaId)+" is not yet received")
+				log("\n History of replicaId "+str(replicaId)+" is not yet received")
 				return False
 		historySet = {}
 		for replicaId in quorum:
-			#output("\n"+str(self.wedgedStatementList[replicaId]))
+			#output("\n "+str(self.wedgedStatementList[replicaId]))
 			for orderProof in self.wedgedStatementList[replicaId]:
 				#output("\n"+str(orderProof))
 				slotNumber = orderProof['slotNumber']
@@ -85,11 +85,11 @@ class Olympus(process):
 					historySet[slotNumber] = orderProof['seqNo']
 				else:
 					if(historySet[slotNumber]!=orderProof['seqNo']):
-						log("\nhistorySet[slotNumber] = "+ str(historySet[slotNumber])+ "orderProof[seqNo]=" + str(orderProof['seqNo']))
-						log("\nQuorum "+ str(quorum)+ " is inconsistent!!!")
+						log("\n historySet[slotNumber] = "+ str(historySet[slotNumber])+ "orderProof[seqNo]=" + str(orderProof['seqNo']))
+						log("\n Quorum "+ str(quorum)+ " is inconsistent!!!")
 						return False
 				#output("\nHistorySet = "+ str(historySet))
-		log("\nFound consistent quorum. Wedged Messages are valid.")
+		log("\n Found consistent quorum. Wedged Messages are valid.")
 		return True	
 
 	def findValidQuorum():
@@ -97,7 +97,7 @@ class Olympus(process):
 			if(hasValidWedgedMessage(quorum)):
 				return quorum
 			else:
-				log("\nChecking next quorum for validity of wedged messages....")
+				log("\n Checking next quorum for validity of wedged messages....")
 				continue
 	
 	def findLongHistoryReplica(validQuorum):
@@ -108,7 +108,7 @@ class Olympus(process):
 			if(maxLen<curLen):
 				maxLen=curLen
 				longestHistReplica=replicaId
-		log("\nLongest history = "+ str(self.wedgedStatementList[longestHistReplica]))
+		log("\n Longest history = "+ str(self.wedgedStatementList[longestHistReplica]))
 		return longestHistReplica
 	
 	def findDiffInHist(list1,list2):
@@ -121,27 +121,52 @@ class Olympus(process):
 		
 	def sendCatchUp(validQuorum,longestHistReplica):
 		ch=""
+		log("\n Sending catch up data to replicas in quorum "+ str(validQuorum))
 		for replicaId in validQuorum:
 			catchUpData=[]
 			if(replicaId!=longestHistReplica):
 				catchUpData = findDiffInHist(self.wedgedStatementList[replicaId],self.wedgedStatementList[longestHistReplica])
-				log("\nSending catch up data "+ str(catchUpData) + " to replica "+ str(replicaId))
-				send(('CatchUpMessage',catchUpData,),to=self.replicaList[replicaId]["obj"])
+				log("\n Sending catch up data "+ str(catchUpData) + " to replica "+ str(replicaId))
+				self.sendCatchUpMessagesCount+=1
+				send(('CatchUpMessage',catchUpData,),to=self.replicaList[replicaId-1]["obj"])
 	
-	def receive(msg=('CaughtUpMessage',replicaId,runningState,resultProof,), from_ = p):
+	def receive(msg=('CaughtUpMessage',replicaId,runningState,resultStatement,), from_ = p):
+		log("\n Received caught up message from replicaId "+ str(replicaId))
+		log("\n Caught up running state = "+ str(runningState) + "resultStatement = "+ str(resultStatement))
 		self.caughtUpMessagesCount+=1
-		self.caughtUpRunningStateMessages[replicaId] = runningState 
-		self.caughtUpResultProofMessages[replicaId] = resultProof
+		self.caughtUpRunningStateMessages.append(runningState) 
+		self.caughtUpResultProofMessages.append(resultStatement)
 	
-	def isCaughtUpMessageConsistent(validQuorum):
-		commonRunningState = self.caughtUpRunningStateMessages[validQuorum[0]]
-		commonResultProof = self.caughtUpResultProofMessages[validQuorum[0]]
-		for index in range(1,len(validQuorum)+1):
-			replicaId=validQuorum[index]
-			if(self.caughtUpRunningStateMessages[replicaId]!=commonRunningState or 
-			self.caughtUpResultProofMessages[replicaId]!= commonResultProof):
+	def isCaughtUpMessageConsistent():
+		commonRunningState = self.caughtUpRunningStateMessages[0]
+		commonResultProof = self.caughtUpResultProofMessages[0]
+		log("\n common running state = "+ str(self.caughtUpRunningStateMessages[0]))
+		log("\n common result proof = "+str(self.caughtUpResultProofMessages[0]))
+		for each in range(1,len(self.caughtUpRunningStateMessages)):
+			log("\n Checking caught up message index = "+str(each))
+			if(self.caughtUpRunningStateMessages[each]!=commonRunningState or self.caughtUpResultProofMessages[each]!=commonResultProof):
+				log("\n Caught Up messages do not match among replicas in the quorum!!!")
 				return False
-		return True
+		return True,commonRunningState
+	
+	def receive(msg=('RunningState',replicaId,runningState,), from_=p):
+		self.getRunningStateFlag = True
+		self.getRunningState = runningState
+		
+	def verifyRunningState(validQuorum,ch):
+		for replicaId in validQuorum:
+			self.getRunningStateFlag = False
+			self.getRunningState = ""
+			send(('GetRunningState',),to=self.replicaList[replicaId-1]["obj"])
+			if await(self.getRunningStateFlag):
+				log("\nGot running state from replicaId "+str(replicaId)+" and now validating it with ch..")
+				if(ch==self.getRunningState):
+					return replicaId
+				else:
+					log("\n ch doesn't match with running state of replicaId "+str(replicaId))
+			elif timeout(1):
+				log("\nDid not receive running state from replicaId "+str(replicaId))
+		return -1
 	
 	# any replica sends reconfig request
 	def receive(msg=('Reconfiguration-request',), from_ = p):
@@ -170,34 +195,39 @@ class Olympus(process):
 		validQuorum=()
 		for quorum in quorumList:
 			validQuorum=()
-			self.caughtUpRunningStateMessages = {}
-			self.caughtUpResultProofMessages = {}
+			self.caughtUpRunningStateMessages = []
+			self.caughtUpResultProofMessages = []
 			self.caughtUpMessagesCount = 0
+			self.sendCatchUpMessagesCount = 0
 			if(hasValidWedgedMessage(quorum)):
 				validQuorum=quorum
 			else:
 				log("\nChecking next quorum for validity of wedged messages....")
 				continue
 			log("\nFound quorum with valid wedged messages. ValidQuorum = "+ str(validQuorum))
-			log("\nFinding longest history")
+			log("\n\nFinding longest history")
 			longestHistReplica = findLongHistoryReplica(validQuorum)
-			log("\nSending catch up messages to replicas in validQuorum")
+			log("\n\nSending catch up messages to replicas in validQuorum "+ str(validQuorum))
 			sendCatchUp(validQuorum,longestHistReplica)
-			if await(self.caughtUpMessagesCount==config["t"]+1):		
-				log("\nReceived t+1 caught up messages.Checking consistency among caught up messages")
-				if(isCaughtUpMessageConsistent(validQuorum)):
+			if await(self.caughtUpMessagesCount==self.sendCatchUpMessagesCount):		
+				log("\n\nReceived all caught up messages.Checking consistency among caught up messages")
+				isCached,ch = isCaughtUpMessageConsistent()
+				if(isCached):
 					log("\nCaught Up Messages are consistent. Final valid quorum = "+str(validQuorum))
 					break
 				else:
 					log("\nCaught Up Messages are NOT consistent. Checking next quorum in the quorumList")
 					continue
 			elif timeout(1):
-				log("\nCouldn't receive t+1 caught up messages. Checking next quorum in the quorumList")
+				log("\nCouldn't receive ALL caught up messages. Checking next quorum in the quorumList")
 				continue
 				
-		log("\nVerifying runningState now....")	
-			
-			
+		log("\n\nVerifying runningState now....")	
+		runStateReplica = verifyRunningState(validQuorum,ch)
+		if(runStateReplica==-1):
+			log("\nCouldn't find any matching running state as ch!!!")
+		else:
+			log("\n ch matched with running state of replicaId "+ str(runStateReplica))
 			
 			
 
@@ -230,8 +260,11 @@ class Olympus(process):
 		self.logBuffer = ""
 		self.isReconfiguring = False
 		self.caughtUpMessagesCount = 0
-		self.caughtUpRunningStateMessages = {}
-		self.caughtUpResultProofMessages = {}
+		self.sendCatchUpMessagesCount = 0
+		self.caughtUpRunningStateMessages = []
+		self.caughtUpResultProofMessages = []
+		self.getRunningStateFlag = False
+		self.getRunningState = ""
 
 		#creating quorumList
 		self.f.write("\nCreating quorumList")

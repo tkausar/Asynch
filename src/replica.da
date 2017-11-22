@@ -534,6 +534,9 @@ class Replica(process):
 
 		log("\n Sending CaughtUp Message to olympus.....")
 		send(('CaughtUpMessage', self.replicaId,self.db,result,), to=oly)
+	
+	def receive(msg=('GetRunningState',),from_=oly):
+		send(('RunningState',self.replicaId,self.db,),to=oly)
 				
 	def run():
 		self.f.write("\nRunning Replica " + str(replicaId))
