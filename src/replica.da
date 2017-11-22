@@ -522,7 +522,7 @@ class Replica(process):
 					send(('shuttlefromReplica',shuttle,request,slotnumber,), to=each["obj"])
 
 	def receive(msg=('WedgeRequest',),from_=oly):
-		send(('WedgedStatement', replicaId, self.history,), to=oly)
+		send(('WedgedStatement', replicaId, self.history,self.db), to=oly)
 		log("\nSent wedge response to Olympus" + str(oly))
 
 	def receive(msg=('CatchUpMessage', catchUpData),from_=oly):
