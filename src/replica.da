@@ -525,6 +525,16 @@ class Replica(process):
 		send(('WedgedStatement', replicaId, self.history,), to=oly)
 		log("\nSent wedge response to Olympus" + str(oly))
 
+	def receive(msg=('CatchUpMessage', catchUpData),from_=oly):
+		for data in catchUpData:
+			operation = data["operation"]
+			log("\n Caught Up message from olympus for operation" + str(operation))
+			result = processRequest(operation)
+			log("\n DB Status - " + self.db)
+
+		log("\n Sending CaughtUp Message to olympus.....")
+		send(('CaughtUpMessage', self.replicaId,self.db,result,), to=oly)
+				
 	def run():
 		self.f.write("\nRunning Replica " + str(replicaId))
 		self.f.close()
