@@ -7,7 +7,6 @@ Client = import_da('client')
 replicaList = []
 clientList = []
 class Olympus(process):
-
 	def log(logString):
 		self.logBuffer+=logString
 		if(len(self.logBuffer)>0):
@@ -73,13 +72,13 @@ class Olympus(process):
 		
 	def hasValidWedgedMessage(quorum):
 		for replicaId in quorum:
-			if(replicaId not in wedgedStatementList):
+			if(replicaId not in self.wedgedStatementList):
 				log("\nHistory of replicaId "+str(replicaId)+" is not yet received")
 				return False
 		historySet = {}
 		for replicaId in quorum:
-			#output("\n"+str(wedgedStatementList[replicaId]))
-			for orderProof in wedgedStatementList[replicaId]:
+			#output("\n"+str(self.wedgedStatementList[replicaId]))
+			for orderProof in self.wedgedStatementList[replicaId]:
 				#output("\n"+str(orderProof))
 				slotNumber = orderProof['slotNumber']
 				if(slotNumber not in historySet):
@@ -90,35 +89,117 @@ class Olympus(process):
 						log("\nQuorum "+ str(quorum)+ " is inconsistent!!!")
 						return False
 				#output("\nHistorySet = "+ str(historySet))
-		log("\nFound consistent quorum")
-		return True		
+		log("\nFound consistent quorum. Wedged Messages are valid.")
+		return True	
+
+	def findValidQuorum():
+		for quorum in quorumList:
+			if(hasValidWedgedMessage(quorum)):
+				return quorum
+			else:
+				log("\nChecking next quorum for validity of wedged messages....")
+				continue
+	
+	def findLongHistoryReplica(validQuorum):
+		maxLen=0
+		longestHistReplica=0
+		for replicaId in validQuorum:
+			curLen=len(self.wedgedStatementList[replicaId])
+			if(maxLen<curLen):
+				maxLen=curLen
+				longestHistReplica=replicaId
+		log("\nLongest history = "+ str(self.wedgedStatementList[longestHistReplica]))
+		return longestHistReplica
+	
+	def findDiffInHist(list1,list2):
+		catch = []
+		for each in list2:
+			if(each not in list1):
+				#output("\nDiff"+str(each))
+				catch.append(each)
+		return catch
+		
+	def sendCatchUp(validQuorum,longestHistReplica):
+		ch=""
+		for replicaId in validQuorum:
+			catchUpData=[]
+			if(replicaId!=longestHistReplica):
+				catchUpData = findDiffInHist(self.wedgedStatementList[replicaId],self.wedgedStatementList[longestHistReplica])
+				log("\nSending catch up data "+ str(catchUpData) + " to replica "+ str(replicaId))
+				send(('CatchUpMessage',catchUpData,),to=self.replicaList[replicaId]["obj"])
+	
+	def receive(msg=('CaughtUpMessage',replicaId,runningState,resultProof,), from_ = p):
+		self.caughtUpMessagesCount+=1
+		self.caughtUpRunningStateMessages[replicaId] = runningState 
+		self.caughtUpResultProofMessages[replicaId] = resultProof
+	
+	def isCaughtUpMessageConsistent(validQuorum):
+		commonRunningState = self.caughtUpRunningStateMessages[validQuorum[0]]
+		commonResultProof = self.caughtUpResultProofMessages[validQuorum[0]]
+		for index in range(1,len(validQuorum)+1):
+			replicaId=validQuorum[index]
+			if(self.caughtUpRunningStateMessages[replicaId]!=commonRunningState or 
+			self.caughtUpResultProofMessages[replicaId]!= commonResultProof):
+				return False
+		return True
 	
 	# any replica sends reconfig request
 	def receive(msg=('Reconfiguration-request',), from_ = p):
+		if(not self.isReconfiguring):
+			self.isReconfiguring = True
+		else:
+			await(self.isReconfiguring==False)
+		
 		log("\n\nReceived reconfiguration request from replica " +  str(p))
 		log("\nSending wedge request to all replicas .....")
 		sendWedgeRequest()
 		
 		#await till t+1 responses to initiate consistency check
 		if await(self.countResponse==config["t"]+1):
-			log("\n\nReceived wedge statement from t+1 replicas : ")
-		log("\n" + str(wedgedStatementList))
-		
+			self.countResponse=0
+			log("\n\nReceived wedge statements from t+1 replicas : ")
+		log("\n" + str(self.wedgedStatementList))
 		#validate wedge statement messages
-		log("\n\nValidating wedged messages....")
+		log("\n\nInitiating Consistency check and catchUp check....")
+		
+		if await(self.countResponse>config["t"]+1):
+			self.countResponse=0
+		elif timeout(0.5):
+			self.countResponse=0
+		
 		validQuorum=()
 		for quorum in quorumList:
+			validQuorum=()
+			self.caughtUpRunningStateMessages = {}
+			self.caughtUpResultProofMessages = {}
+			self.caughtUpMessagesCount = 0
 			if(hasValidWedgedMessage(quorum)):
-				validQuorum = quorum
-				break
+				validQuorum=quorum
 			else:
 				log("\nChecking next quorum for validity of wedged messages....")
 				continue
-				
-		if(len(validQuorum)!=0):
 			log("\nFound quorum with valid wedged messages. ValidQuorum = "+ str(validQuorum))
-		else:
-			log("\nNo valid quorum found!!! ")
+			log("\nFinding longest history")
+			longestHistReplica = findLongHistoryReplica(validQuorum)
+			log("\nSending catch up messages to replicas in validQuorum")
+			sendCatchUp(validQuorum,longestHistReplica)
+			if await(self.caughtUpMessagesCount==config["t"]+1):		
+				log("\nReceived t+1 caught up messages.Checking consistency among caught up messages")
+				if(isCaughtUpMessageConsistent(validQuorum)):
+					log("\nCaught Up Messages are consistent. Final valid quorum = "+str(validQuorum))
+					break
+				else:
+					log("\nCaught Up Messages are NOT consistent. Checking next quorum in the quorumList")
+					continue
+			elif timeout(1):
+				log("\nCouldn't receive t+1 caught up messages. Checking next quorum in the quorumList")
+				continue
+				
+		log("\nVerifying runningState now....")	
+			
+			
+			
+			
 
 	def sendReplicaListToClient():
 		self.f.write("\nSending list of replica and public key to all client")
@@ -144,9 +225,13 @@ class Olympus(process):
 		self.f.write("\nSetting up olympus....")
 		self.responseFlag=False
 		self.wedgedStatementList = {}
-		self.countResponse = 0
 		self.quorumList = []
+		self.countResponse=0
 		self.logBuffer = ""
+		self.isReconfiguring = False
+		self.caughtUpMessagesCount = 0
+		self.caughtUpRunningStateMessages = {}
+		self.caughtUpResultProofMessages = {}
 
 		#creating quorumList
 		self.f.write("\nCreating quorumList")
