@@ -14,6 +14,7 @@ class Client(process):
 			
 	def setup(clientId,workloadList,signingKey,config,logFilePath):
 		self.f = open(logFilePath + 'client_'+ str(clientId) + '.log','w')
+		self.f.close()
 		self.requestSequenceList = []
 		self.replicaList = []
 		self.setupFlag = False
@@ -28,7 +29,7 @@ class Client(process):
 		self.logBuffer=""
 		# Creating a list of operations.
 		createRequestSequenceList(workloadList)
-		self.f.write("\nClient - " + str(clientId) + " setup completed")
+		log("\nClient - " + str(clientId) + " setup completed")
 
 	def generatePseudoRequests(seedVal,n):
 		pseudoWorkload=["put('a','100')","put('b','200')","put('c','300')","append('a',' zz')","append('b',' xx')","append('c','yy')","get('a')","get('b')","get('c')","put('d','800')","append('d',' vvv')","append('d',' ttt')","append('d',' qqq')","slice('a','0:4')","get('a')","put('e','star')","put('f','6000')","put('g','9000')","append('a',' h')","get('f')","put('g','666')","slice('g',' lol')","slice('b','0:4')","get('g')"]
@@ -126,8 +127,8 @@ class Client(process):
 				retransmitRequest(request)
 
 	def run():
-		self.f.write("\nRunning client Id - " +  str(clientId))
-		self.f.close()
+		log("\nRunning client Id - " +  str(clientId))
+		#self.f.close()
 		await(self.setupFlag == True)
 		sendRequest()
 		if await(self.exitFlag == True):
