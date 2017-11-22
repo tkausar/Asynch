@@ -1,4 +1,4 @@
-import nacl.encodinG
+import nacl.encoding
 import nacl.signing
 import nacl.hash
 import json
@@ -180,7 +180,7 @@ class Replica(process):
 	                                		shuttle["rproof"]["resultStatement"].append(createResultStatement(slotnumber,request["seqNo"],result))
         	                        		log("\nCreated ResultProof with signed resultStatement")
 					
-						createHistoryTuple(slotnumber,request["seqNo"],request["clientId"])
+						createHistoryTuple(slotnumber,request["seqNo"],request["clientId"],request["operation"])
 						log("\nAppended orderProof and resultproof to shuttle")
 						log("\nCurrent Database : " + str(self.db))
 						request = changeOperationFail(config,request)
@@ -369,7 +369,7 @@ class Replica(process):
 
 				shuttle["oproof"] = oproof
 				shuttle["rproof"] = rproof
-				createHistoryTuple(self.slotnumber,request["seqNo"],request["clientId"])
+				createHistoryTuple(self.slotnumber,request["seqNo"],request["clientId"],request["operation"])
 				log("\nAppended orderProof and resultproof to shuttle")
 				log("\nCurrent Database : " + str(self.db))
 
@@ -456,11 +456,12 @@ class Replica(process):
 		signedRequest = signingKey.sign(bytes(json.dumps(statement),'utf-8'))
 		return signedRequest
 
-	def createHistoryTuple(slotNumber,sequenceNumber,clientId):
+	def createHistoryTuple(slotNumber,sequenceNumber,clientId,request):
 		h = {}
 		h["seqNo"] = sequenceNumber
 		h["slotNumber"] = slotNumber
 		h["clientId"] = clientId
+		h["operation"] = request
 		self.history.append(h)
 		log("\nAdded operation to replica's history")
 
