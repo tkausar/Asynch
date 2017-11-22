@@ -530,7 +530,7 @@ class Replica(process):
 			operation = data["operation"]
 			log("\n Caught Up message from olympus for operation" + str(operation))
 			result = processRequest(operation)
-			log("\n DB Status - " + self.db)
+			log("\n DB Status - " + str(self.db))
 
 		log("\n Sending CaughtUp Message to olympus.....")
 		send(('CaughtUpMessage', self.replicaId,self.db,result,), to=oly)
