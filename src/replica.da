@@ -39,8 +39,18 @@ class Replica(process):
 		self.incSlot = False
 		self.drop = False
 		self.prevnumber = 0
+		self.reconfig = False
 		log("\nReplica " + str(replicaId) +" setup done")
 
+	def receive(msg=('stopReplica',), from_=p):
+		log("\n Stop called ............")
+		self.reconfig = True
+
+	def sendMsg():
+		for each in self.replicaList:
+			log("\nSewnding stop msg to" + str(each["obj"]))
+			send(('stopReplica',), to=each["obj"])		
+		
 	# Message from olympus to intialize all variables.
 	# replicaList - List of all replica
 	# clientList - List of all clients
@@ -143,71 +153,75 @@ class Replica(process):
 	def receive(msg=('shuttlefromReplica',shuttle,request,slotnumber,), from_=p):
 		log("\n\nReceived shuttle from previous replica : "+ str(p) + " for operation : " + request["operation"])
 		log("\nChecked history for slot number : " + str(slotnumber) + " and " + "sequence number : " + str(request["seqNo"] ))
-		if(checkHistory(slotnumber, request["seqNo"],request["clientId"]) == False):
-			log("\nChecking validity of order statement")
-			if( checkValidityOfOrderStatement(shuttle["oproof"]) == True):
-				log("\nProcessing request: " + request["operation"])
-				changeFailFlag(config,request)
+		if(self.reconfig == False):
+			if(checkHistory(slotnumber,request["seqNo"],request["clientId"]) == False):
+				log("\nChecking validity of order statement")
+				if( checkValidityOfOrderStatement(shuttle["oproof"]) == True):
+					log("\nProcessing request: " + request["operation"])
+					changeFailFlag(config,request)
 
-				if(self.crash == True):
-					log("\n******Crash is enable*******")
-					os._exit(-1)
+					if(self.crash == True):
+						log("\n******Crash is enable*******")
+						os._exit(-1)
 
-				if(self.sleep == True):
-					log("\n******Sleep enable********")
-					time.sleep(5)
-					self.sleep = False
+					if(self.sleep == True):
+						log("\n******Sleep enable********")
+						time.sleep(5)
+						self.sleep = False
 
-				if(self.drop == False):
+					if(self.drop == False):
 
-					result = processRequest(request["operation"])
-					if(self.changeResult == True):
-						result = "OK"
-					self.changeResult = False
-					log("\nChecked validity of result statement")
-					if( checkResultValidity(shuttle["rproof"], result) == True ):
-						if (self.changeSignOrder == True):
-                                			self.changeSignOrder = False
-                                			shuttle["oproof"]["orderStatement"].append(createInvalidOdrerStatement(slotnumber,request["seqNo"]))
-                                			log("\n******Created OrderProof with INVALID signed oredrStatement")
-						else:
-                                			shuttle["oproof"]["orderStatement"].append(createOdrerStatement(slotnumber,request["seqNo"]))
-                                			log("\nCreated OrderProof with signed oredrStatement")
+						result = processRequest(request["operation"])
+						if(self.changeResult == True):
+							result = "OK"
+						self.changeResult = False
+						log("\nChecked validity of result statement")
+						if( checkResultValidity(shuttle["rproof"], result) == True ):
+							if (self.changeSignOrder == True):
+                                				self.changeSignOrder = False
+                                				shuttle["oproof"]["orderStatement"].append(createInvalidOdrerStatement(slotnumber,request["seqNo"]))
+                                				log("\n******Created OrderProof with INVALID signed oredrStatement")
+							else:
+                                				shuttle["oproof"]["orderStatement"].append(createOdrerStatement(slotnumber,request["seqNo"]))
+                                				log("\nCreated OrderProof with signed oredrStatement")
 
-						if (self.changeSignResult == True):
-                                			self.changeSignResult = False
-                                			shuttle["rproof"]["resultStatement"].append(createInvalidResultStatement((slotnumber,request["seqNo"],result)))
-                        	        		log("\nCreated ResultProof with INVALID signed resultStatement")
-						else:
-	                                		shuttle["rproof"]["resultStatement"].append(createResultStatement(slotnumber,request["seqNo"],result))
-        	                        		log("\nCreated ResultProof with signed resultStatement")
+							if (self.changeSignResult == True):
+                                				self.changeSignResult = False
+                                				shuttle["rproof"]["resultStatement"].append(createInvalidResultStatement((slotnumber,request["seqNo"],result)))
+                        	        			log("\nCreated ResultProof with INVALID signed resultStatement")
+							else:
+	                                			shuttle["rproof"]["resultStatement"].append(createResultStatement(slotnumber,request["seqNo"],result))
+        	                        			log("\nCreated ResultProof with signed resultStatement")
 					
-						createHistoryTuple(slotnumber,request["seqNo"],request["clientId"],request["operation"])
-						log("\nAppended orderProof and resultproof to shuttle")
-						log("\nCurrent Database : " + str(self.db))
-						request = changeOperationFail(config,request)
-						if "checkpointproof" in shuttle:
-							log("\nCreated and signed checkpoint statement of current running state and appended to checkpointproof")
-							shuttle["checkpointproof"]["checkPointStatement"].append(createCheckPointStatement())	
-						sendRequest(request,shuttle,slotnumber)
-						if await(self.resultShuttleFlag == True):
-							log("\nGot a result shuttle for operation " + request["operation"])
-						elif timeout(float(config["nonhead_timeout"])):
-							log("\nNon-head replica timeout for operation : " + request["operation"])
-							log("\nSending Reconfig request to olympus")
+							createHistoryTuple(slotnumber,request["seqNo"],request["clientId"],request["operation"])
+							log("\nAppended orderProof and resultproof to shuttle")
+							log("\nCurrent Database : " + str(self.db))
+							request = changeOperationFail(config,request)
+							if "checkpointproof" in shuttle:
+								log("\nCreated and signed checkpoint statement of current running state and appended to checkpointproof")
+								shuttle["checkpointproof"]["checkPointStatement"].append(createCheckPointStatement())	
+							sendRequest(request,shuttle,slotnumber)
+							if await(self.resultShuttleFlag == True):
+								log("\nGot a result shuttle for operation " + request["operation"])
+							elif timeout(float(config["nonhead_timeout"])):
+								log("\nNon-head replica timeout for operation : " + request["operation"])
+								log("\nSending Reconfig request to olympus")
+								send(('Reconfiguration-request',), to=self.olympus)
+						else:
+							log("\nResult Proof validty failed... Proof of misbehiviour\n Sending reconfiguration request to Olympus")
+							sendMsg()
 							send(('Reconfiguration-request',), to=self.olympus)
 					else:
-						log("\nResult Proof validty failed... Proof of misbehiviour\n Sending reconfiguration request to Olympus")
-						send(('Reconfiguration-request',), to=self.olympus)
+						log("\n****Dropping incoming request")
+						self.drop = False
 				else:
-					log("\n****Dropping incoming request")
-					self.drop = False
+					log("\nOrder statement validty failed... Proof of misbehiviour")
+					sendMsg()
+					send(('Reconfiguration-request',), to=self.olympus)
 			else:
-				log("\nOrder statement validty failed... Proof of misbehiviour")
+				log("\nSame slot number is allocated with different operation")
+				sendMsg()
 				send(('Reconfiguration-request',), to=self.olympus)
-		else:
-			log("\nSame slot number is allocated with different operation")
-			send(('Reconfiguration-request',), to=self.olympus)
 
 	# Check result validity
 	def checkResultValidity(resultProof, result):
@@ -326,84 +340,87 @@ class Replica(process):
 		request = decryptClientRequest(signedRequest,clientId)
 		log("\n\nReceived signed request from client :"+ str(client))
 		log("\nDecrypted request: "+ request["operation"])
-		if(isHead == True):
+		if(isHead == True and self.reconfig == False):
 			self.slotnumber += 1
 			if(self.slotnumber - self.prevnumber > 1):
 				log("\n*****Hole in slot Number")
 				log("\nSending reconfiguration request")
+				sendMsg()
 				send(('Reconfiguration-request',), to=self.olympus)
-			self.prevnumber = self.slotnumber
-			shuttle = {}
-			log("\nHead Replica: Created slot number " + str(self.slotnumber))
-			log("\nProcessing request: " + request["operation"])
-			changeFailFlag(config,request)
-
-			if(self.crash == True):
-				log("\n*****Crash failure triggered....")
-				os._exit(-1)
-
-			if(self.sleep == True):
-				log("\n*****Sleep failure triggered.... Replica is in sleep mode")
-				time.sleep(5)
-				self.sleep = False
-
-			if(self.drop == False):
-				result = processRequest(request["operation"])
-
-				if(self.changeResult == True):
-					log("\n******Change result failures triggered")
-					result = "OK"
-					self.changeResult = False
-
-				oproof = createOrderProof(request, self.slotnumber)
-				rproof = createResultProof(request, self.slotnumber, result)
-
-				if (self.changeSignOrder == True):
-					self.changeSignOrder = False
-					oproof["orderStatement"].append(createInvalidOdrerStatement(self.slotnumber,request["seqNo"]))
-					log("\n******Created OrderProof with INVALID signed oredrStatement")
-				else:
-					oproof["orderStatement"].append(createOdrerStatement(self.slotnumber,request["seqNo"]))
-					log("\nCreated OrderProof with signed oredrStatement")
-
-				if self.changeSignResult == True:
-					self.changeSignResult = False				
-					rproof["resultStatement"].append(createInvalidResultStatement(self.slotnumber, request["seqNo"],result))
-					log("\nCreated ResultProof with INVALID signed resultStatement")
-				else:
-					rproof["resultStatement"].append(createResultStatement(self.slotnumber, request["seqNo"],result))
-					log("\nCreated ResultProof with signed resultStatement")
-
-				shuttle["oproof"] = oproof
-				shuttle["rproof"] = rproof
-				createHistoryTuple(self.slotnumber,request["seqNo"],request["clientId"],request["operation"])
-				log("\nAppended orderProof and resultproof to shuttle")
-				log("\nCurrent Database : " + str(self.db))
-
-				if (self.slotnumber % 4 == 0):
-					log("\nIntiating checkpoint at slotNumber" +  str(self.slotnumber))
-					checkpointproof = {}
-					checkpointproof["checkPointStatement"] = []
-					checkpointproof["checkPointStatement"].append(createCheckPointStatement())
-					log("\nCreated and signed checkpoint statement of current running state")
-					shuttle["checkpointproof"] = checkpointproof
-
-				request = changeOperationFail(config,request)
-
-				sendRequest(request,shuttle,self.slotnumber)
-				if (self.incSlot == True):
-					self.slotnumber += 1
-					self.incSlot = False	
-				log("\nWaiting for result shuttle...")
-				if await(self.resultShuttleFlag == True):
-					log("\nGot a result shuttle for operation in head replica " + request["operation"])
-				elif timeout(float(config["head_timeout"])):
-					log("\nHead replica timeout for operation : " + request["operation"])
-					log("\nSending Reconfig request to olympus " + str(self.olympus))
-					send(('Reconfiguration-request',), to=self.olympus)
 			else:
-				log("\n********Dropping incoming request")
-				self.drop = False
+				self.prevnumber = self.slotnumber
+				shuttle = {}
+				log("\nHead Replica: Created slot number " + str(self.slotnumber))
+				log("\nProcessing request: " + request["operation"])
+				changeFailFlag(config,request)
+
+				if(self.crash == True):
+					log("\n*****Crash failure triggered....")
+					os._exit(-1)
+
+				if(self.sleep == True):
+					log("\n*****Sleep failure triggered.... Replica is in sleep mode")
+					time.sleep(5)
+					self.sleep = False
+
+				if(self.drop == False):
+					result = processRequest(request["operation"])
+
+					if(self.changeResult == True):
+						log("\n******Change result failures triggered")
+						result = "OK"
+						self.changeResult = False
+
+					oproof = createOrderProof(request, self.slotnumber)
+					rproof = createResultProof(request, self.slotnumber, result)
+
+					if (self.changeSignOrder == True):
+						self.changeSignOrder = False
+						oproof["orderStatement"].append(createInvalidOdrerStatement(self.slotnumber,request["seqNo"]))
+						log("\n******Created OrderProof with INVALID signed oredrStatement")
+					else:
+						oproof["orderStatement"].append(createOdrerStatement(self.slotnumber,request["seqNo"]))
+						log("\nCreated OrderProof with signed oredrStatement")
+
+					if self.changeSignResult == True:
+						self.changeSignResult = False				
+						rproof["resultStatement"].append(createInvalidResultStatement(self.slotnumber, request["seqNo"],result))
+						log("\nCreated ResultProof with INVALID signed resultStatement")
+					else:
+						rproof["resultStatement"].append(createResultStatement(self.slotnumber, request["seqNo"],result))
+						log("\nCreated ResultProof with signed resultStatement")
+
+					shuttle["oproof"] = oproof
+					shuttle["rproof"] = rproof
+					createHistoryTuple(self.slotnumber,request["seqNo"],request["clientId"],request["operation"])
+					log("\nAppended orderProof and resultproof to shuttle")
+					log("\nCurrent Database : " + str(self.db))
+
+					if (self.slotnumber % 4 == 0):
+						log("\nIntiating checkpoint at slotNumber" +  str(self.slotnumber))
+						checkpointproof = {}
+						checkpointproof["checkPointStatement"] = []
+						checkpointproof["checkPointStatement"].append(createCheckPointStatement())
+						log("\nCreated and signed checkpoint statement of current running state")
+						shuttle["checkpointproof"] = checkpointproof
+
+					request = changeOperationFail(config,request)
+
+					sendRequest(request,shuttle,self.slotnumber)
+					if (self.incSlot == True):
+						self.slotnumber += 1
+						self.incSlot = False	
+					log("\nWaiting for result shuttle...")
+					if await(self.resultShuttleFlag == True):
+						log("\nGot a result shuttle for operation in head replica " + request["operation"])
+					elif timeout(float(config["head_timeout"])):
+						log("\nHead replica timeout for operation : " + request["operation"])
+						log("\nSending Reconfig request to olympus " + str(self.olympus))
+						sendMsg()
+						send(('Reconfiguration-request',), to=self.olympus)
+				else:
+					log("\n********Dropping incoming request")
+					self.drop = False
 
 	def createOrderProof(request,slotNumber):
 		proof = {}
@@ -555,6 +572,3 @@ class Replica(process):
 		if await(self.responseFlag == True):
 			output("Closing replica"+str(self.replicaId))
 			log("\nShutting replica!!")
-		#elif timeout(1):
-		#	output("Closing log file")
-		#	self.f.close()
