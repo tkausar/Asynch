@@ -4,8 +4,8 @@ import nacl.signing
 import itertools
 Replica = import_da('replica')
 Client = import_da('client')
-replicaList = []
-clientList = []
+#replicaList = []
+#clientList = []
 class Olympus(process):
 	def log(logString):
 		self.logBuffer+=logString
@@ -28,21 +28,26 @@ class Olympus(process):
 		return keyPair
 
 	def getReplicaList(t):
+		self.replicaList = []
 		numberOfReplica = (2*t) + 1;
 		for counter in range(1,numberOfReplica+1):
 			keyPair = generateSignKey()
 			if(counter == 1):
+				log("\n Creating head replica")
 				r = new(Replica.Replica, args=(counter, True, False,keyPair["signing_key"],config,logFilePath,), at='node2')
 			elif (counter == numberOfReplica):
-				 r = new(Replica.Replica, args=(counter, False, True, keyPair["signing_key"],config,logFilePath,), at='node2')
+				log("\n Creating replica "+str(counter))
+				r = new(Replica.Replica, args=(counter, False, True, keyPair["signing_key"],config,logFilePath,), at='node2')
 			else:
-				 r = new(Replica.Replica, args=(counter, False, False, keyPair["signing_key"],config,logFilePath,), at='node2')
+				log("\n Creating replica "+str(counter))
+				r = new(Replica.Replica, args=(counter, False, False, keyPair["signing_key"],config,logFilePath,), at='node2')
 			self.verifyKeyHexReplicaList[counter] = keyPair["verify_key_hex"]
 			replica = {}
 			replica["id"] = counter
 			replica["obj"] = r
-			replicaList.append(replica)
-		return replicaList;
+			self.replicaList.append(replica)
+		output("\n "+str(self.replicaList))
+		#return replicaList;
 
 	def getClientList(count):
 		for counter in range(1,count+1):
@@ -54,8 +59,8 @@ class Olympus(process):
 			client = {}
 			client["id"] = counter
 			client["obj"] = c
-			clientList.append(client)
-		return clientList;
+			self.clientList.append(client)
+		#return clientList;
 
 	#On getting reconfig request, olympus sends wedge reuest to all replicas	
 	def sendWedgeRequest():
@@ -153,6 +158,12 @@ class Olympus(process):
 		self.getRunningStateFlag = True
 		self.getRunningState = runningState
 		
+	def abortAllReplicas():
+		for each in self.replicaList:
+			log("\n Aborting replicaId "+ str(each))
+			send(('Abort',),to=each["obj"])
+		
+		
 	def verifyRunningState(validQuorum,ch):
 		for replicaId in validQuorum:
 			self.getRunningStateFlag = False
@@ -228,36 +239,20 @@ class Olympus(process):
 			log("\nCouldn't find any matching running state as ch!!!")
 		else:
 			log("\n ch matched with running state of replicaId "+ str(runStateReplica))
-			
-			
-
-	def sendReplicaListToClient():
-		self.f.write("\nSending list of replica and public key to all client")
-		for each in clientList:
-			self.f.write("\nSending list of replica and public key to client - " +  str(each["obj"]))
-			send(('setupClient',replicaList,self.verifyKeyHexClientList,self.verifyKeyHexReplicaList,), to=each["obj"])
-
-	def sendReplicaListToReplica():
-		self.f.write("\nSending list of clients, replica and public keys to all replica")
-		for each in replicaList:
-			self.f.write("\nSending list of replica and public key to replica - " +  str(each["obj"]))
-			send(('setupReplica',replicaList,clientList,self.verifyKeyHexClientList,self.verifyKeyHexReplicaList,), to=each["obj"])
-
-	def createQuorumList(t):
-		numberOfReplica = (2*t) + 1;
-		quorumLen = t+1;
-		self.quorumList = list(itertools.combinations(range(1,numberOfReplica+1), quorumLen))
-		self.f.write("\nCreated quorumList as "+str(self.quorumList))
+		log("\nAborting all replicas")
+		abortAllReplicas()
+		log("\nSwitching configuration. Setting up new replicas ")
+		#for each in self.replicaList:
+		#	log("\n POst Aborting replicaId "+ str(each))
+		#	send(('Abort',),to=each["obj"])
+		#switchConfig()
 	
-	def setup(config,logFilePath):
-		# Open file pointer for log file
-		self.f = open(logFilePath + 'olympus.log','w')
-		self.f.write("\nSetting up olympus....")
+	def switchConfig():
+		log("\n\n\n Setting up new configuration....")
+		
 		self.responseFlag=False
 		self.wedgedStatementList = {}
-		self.quorumList = []
 		self.countResponse=0
-		self.logBuffer = ""
 		self.isReconfiguring = False
 		self.caughtUpMessagesCount = 0
 		self.sendCatchUpMessagesCount = 0
@@ -266,21 +261,73 @@ class Olympus(process):
 		self.getRunningStateFlag = False
 		self.getRunningState = ""
 
+		#list of clientId-Key dictionary pairs
+		self.verifyKeyHexClientList = {}
+		self.verifyKeyHexReplicaList = {}
+
+		log("\n Setting up all new Replicas...")
+		getReplicaList(config["t"])
+
+		log("\n Setting up all new private and public keys....")
+		sendReplicaListToClient()
+		sendReplicaListToReplica()
+		
+		log("\n Starting new replicas")
+		for each in self.replicaList:
+			start(each["obj"])
+
+	def sendReplicaListToClient():
+		log("\nSending list of replica and public key to all client")
+		for each in clientList:
+			log("\nSending list of replica and public key to client - " +  str(each["obj"]))
+			send(('setupClient',replicaList,self.verifyKeyHexClientList,self.verifyKeyHexReplicaList,), to=each["obj"])
+
+	def sendReplicaListToReplica():
+		log("\nSending list of clients, replica and public keys to all replica")
+		for each in replicaList:
+			log("\nSending list of replica and public key to replica - " +  str(each["obj"]))
+			send(('setupReplica',replicaList,clientList,self.verifyKeyHexClientList,self.verifyKeyHexReplicaList,), to=each["obj"])
+
+	def createQuorumList(t):
+		numberOfReplica = (2*t) + 1;
+		quorumLen = t+1;
+		self.quorumList = list(itertools.combinations(range(1,numberOfReplica+1), quorumLen))
+		log("\nCreated quorumList as "+str(self.quorumList))
+	
+	def setup(config,logFilePath):
+		# Open file pointer for log file
+		self.logBuffer = ""
+		self.f = open(logFilePath + 'olympus.log','w')
+		self.f.close()
+		log("\nSetting up olympus....")
+		self.responseFlag=False
+		self.wedgedStatementList = {}
+		self.quorumList = []
+		self.countResponse=0
+		self.isReconfiguring = False
+		self.caughtUpMessagesCount = 0
+		self.sendCatchUpMessagesCount = 0
+		self.caughtUpRunningStateMessages = []
+		self.caughtUpResultProofMessages = []
+		self.getRunningStateFlag = False
+		self.getRunningState = ""
+		self.replicaList = []
+		self.clientList = []
 		#creating quorumList
-		self.f.write("\nCreating quorumList")
+		log("\nCreating quorumList")
 		createQuorumList(config["t"])
 		
 		#list of clientId-Key dictionary pairs
 		self.verifyKeyHexClientList = {}
 		self.verifyKeyHexReplicaList = {}
 
-		self.f.write("\nSetting up all Replica...")
-		self.replicaList = getReplicaList(config["t"])
+		log("\nSetting up all Replica...")
+		getReplicaList(config["t"])
 
-		self.f.write("\nSetting up all client....")
-		self.clientList = getClientList(config["num_client"])
+		log("\nSetting up all client....")
+		getClientList(config["num_client"])
 
-		self.f.write("\nSetting up all private and public keys....")
+		log("\nSetting up all private and public keys....")
 		sendReplicaListToClient()
 		sendReplicaListToReplica()
 
@@ -289,8 +336,7 @@ class Olympus(process):
 			start(each["obj"])
 		for each in self.replicaList:
 			start(each["obj"])
-		self.f.write("\nOlympus is started.")
-		self.f.close()
+		log("\nOlympus is started.")
 		if await(self.responseFlag == True):
 			output("Done")
 		#elif timeout(3):

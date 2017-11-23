@@ -17,6 +17,7 @@ class Replica(process):
 	# setup is called by olympus with sepcifiying the replica type - head/tail and private key of respective replica. 
 	def setup(replicaId,isHead,isTail,signingKey,config,logFilePath):
 		self.f = open(logFilePath + 'replica_'+ str(replicaId) + '.log','w')
+		self.f.close()
 		self.slotnumber = 0
 		self.history = [] 
 		self.cacheDict = []
@@ -37,7 +38,7 @@ class Replica(process):
 		self.crash = False
 		self.incSlot = False
 		self.drop = False
-		self.f.write("\nReplica " + str(replicaId) +" setup done")
+		log("\nReplica " + str(replicaId) +" setup done")
 
 	# Message from olympus to intialize all variables.
 	# replicaList - List of all replica
@@ -537,13 +538,16 @@ class Replica(process):
 	
 	def receive(msg=('GetRunningState',),from_=oly):
 		send(('RunningState',self.replicaId,self.db,),to=oly)
+	
+	def receive(msg=('Abort',),from_=oly):
+		self.responseFlag = True
 				
 	def run():
-		self.f.write("\nRunning Replica " + str(replicaId))
-		self.f.close()
+		log("\nRunning Replica " + str(replicaId))
 		await(self.setupFlag == True)
 		if await(self.responseFlag == True):
-			output("Done")
+			output("Closing replica"+str(self.replicaId))
+			log("\nShutting replica!!")
 		#elif timeout(1):
 		#	output("Closing log file")
 		#	self.f.close()
