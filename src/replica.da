@@ -16,8 +16,10 @@ class Replica(process):
 
 	# setup is called by olympus with sepcifiying the replica type - head/tail and private key of respective replica. 
 	def setup(replicaId,isHead,isTail,signingKey,config,logFilePath):
-		self.f = open(logFilePath + 'replica_'+ str(replicaId) + '.log','w')
+		self.f = open(logFilePath + 'replica_'+ str(replicaId) + '.log','a+')
 		self.f.close()
+		self.logBuffer=""
+		log("\n\n New Logs Generated")
 		self.slotnumber = 0
 		self.history = [] 
 		self.cacheDict = []
@@ -31,7 +33,6 @@ class Replica(process):
 		self.verifyKeyHexReplicaList= {}
 		self.changeResult = False
 		self.olympus = {}
-		self.logBuffer=""
 		self.changeSignOrder = False
 		self.changeSignResult = False
 		self.sleep = False

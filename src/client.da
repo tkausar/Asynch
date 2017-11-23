@@ -114,9 +114,9 @@ class Client(process):
 		for operation in self.requestSequenceList:
 			log("\n\nChecking with Olympus if configuration changed")
 			send(('CheckReconfigState',),to=self.olympus)
-			if(self.reconfigState):
-				log("\nOlympus is reconfiguring....waiting for new configuration")
-				await(self.reconfigState==False)
+			#if(self.reconfigState):
+			#	log("\nOlympus is reconfiguring....waiting for new configuration")
+				#await(self.reconfigState==False)
 			log("\nOlympus is not in reconfiguration mode")
 			log("\n\nSending request " + operation + " to head replica " + str(self.replicaList[0]["obj"]))
 			self.seqNo += 1
