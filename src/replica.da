@@ -19,7 +19,7 @@ class Replica(process):
 		self.f = open(logFilePath + 'replica_'+ str(replicaId) + '.log','a+')
 		self.f.close()
 		self.logBuffer=""
-		log("\n\n New Logs Generated")
+		log("\n\n------------------------------------------------\nNew Logs Generated for new replica")
 		self.slotnumber = 0
 		self.history = [] 
 		self.cacheDict = []

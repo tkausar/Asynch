@@ -46,7 +46,7 @@ class Olympus(process):
 			replica["id"] = counter
 			replica["obj"] = r
 			self.replicaList.append(replica)
-		output("\n "+str(self.replicaList))
+		#output("\n "+str(self.replicaList))
 		#return replicaList;
 
 	def getClientList(count):
@@ -241,12 +241,14 @@ class Olympus(process):
 			log("\n ch matched with running state of replicaId "+ str(runStateReplica))
 		log("\nAborting all replicas")
 		abortAllReplicas()
-		log("\nSwitching configuration. Setting up new replicas ")
+		log("\n\n\nSwitching configuration. Setting up new replicas ")
 		#for each in self.replicaList:
 		#	log("\n POst Aborting replicaId "+ str(each))
 		#	send(('Abort',),to=each["obj"])
 		switchConfig()
 		self.isReconfiguring = False
+		for eachClient in self.clientList:
+			send(('ReconfigStatus',self.isReconfiguring,),to=eachClient["obj"])
 	
 	def switchConfig():
 		log("\n\n\n Setting up new configuration....")
