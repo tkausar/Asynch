@@ -38,6 +38,7 @@ class Replica(process):
 		self.crash = False
 		self.incSlot = False
 		self.drop = False
+		self.prevnumber = 0
 		log("\nReplica " + str(replicaId) +" setup done")
 
 	# Message from olympus to intialize all variables.
@@ -327,6 +328,11 @@ class Replica(process):
 		log("\nDecrypted request: "+ request["operation"])
 		if(isHead == True):
 			self.slotnumber += 1
+			if(self.slotnumber - self.prevnumber > 1):
+				log("\n*****Hole in slot Number")
+				log("\nSending reconfiguration request")
+				send(('Reconfiguration-request',), to=self.olympus)
+			self.prevnumber = self.slotnumber
 			shuttle = {}
 			log("\nHead Replica: Created slot number " + str(self.slotnumber))
 			log("\nProcessing request: " + request["operation"])
@@ -527,6 +533,7 @@ class Replica(process):
 		log("\nSent wedge response to Olympus" + str(oly))
 
 	def receive(msg=('CatchUpMessage', catchUpData),from_=oly):
+		result = ""
 		for data in catchUpData:
 			operation = data["operation"]
 			log("\n Caught Up message from olympus for operation" + str(operation))
