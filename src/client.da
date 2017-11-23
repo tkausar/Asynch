@@ -13,6 +13,7 @@ class Client(process):
 			self.logBuffer=""
 			
 	def setup(clientId,workloadList,signingKey,config,logFilePath):
+		self.logBuffer=""
 		self.f = open(logFilePath + 'client_'+ str(clientId) + '.log','w')
 		self.f.close()
 		self.requestSequenceList = []
@@ -26,7 +27,8 @@ class Client(process):
 		self.isPseudorandom = False
 		self.expectedResultList = []
 		self.exitFlag=False
-		self.logBuffer=""
+		self.olympus = {}
+		self.reconfigState = False
 		# Creating a list of operations.
 		createRequestSequenceList(workloadList)
 		log("\nClient - " + str(clientId) + " setup completed")
@@ -56,8 +58,9 @@ class Client(process):
 			#log(self.requestSequenceList)
 
 	#msg from olympus
-	def receive(msg=('setupClient',replica,verifyKeyHexClientList,verifyKeyHexReplicaList,)):
+	def receive(msg=('setupClient',replica,verifyKeyHexClientList,verifyKeyHexReplicaList,),from_=oly):
 		log("\nReceived replica list and public keys from olympus")
+		self.olympus = oly
 		self.replicaList = replica
 		self.setupFlag = True
 		self.verifyKeyHexClientList=verifyKeyHexClientList
@@ -104,8 +107,17 @@ class Client(process):
 		elif timeout(float(config["client_timeout"])):
 			log("\n\tTimeout for retransmission request for operation : " + request["operation"])
 
+	def receive(msg=('ReconfigStatus',status,), from_=oly):
+		self.reconfigState = status
+	
 	def sendRequest():
 		for operation in self.requestSequenceList:
+			log("\n\nChecking with Olympus if configuration changed")
+			send(('CheckReconfigState',),to=self.olympus)
+			if(self.reconfigState):
+				log("\nOlympus is reconfiguring....waiting for new configuration")
+				await(self.reconfigState==False)
+			log("\nOlympus is not in reconfiguration mode")
 			log("\n\nSending request " + operation + " to head replica " + str(self.replicaList[0]["obj"]))
 			self.seqNo += 1
 			request = {}

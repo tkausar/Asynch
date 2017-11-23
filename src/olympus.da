@@ -245,7 +245,8 @@ class Olympus(process):
 		#for each in self.replicaList:
 		#	log("\n POst Aborting replicaId "+ str(each))
 		#	send(('Abort',),to=each["obj"])
-		#switchConfig()
+		switchConfig()
+		self.isReconfiguring = False
 	
 	def switchConfig():
 		log("\n\n\n Setting up new configuration....")
@@ -293,6 +294,9 @@ class Olympus(process):
 		quorumLen = t+1;
 		self.quorumList = list(itertools.combinations(range(1,numberOfReplica+1), quorumLen))
 		log("\nCreated quorumList as "+str(self.quorumList))
+	
+	def receive(msg=('CheckReconfigState',), from_= client):
+		send(('ReconfigStatus',self.isReconfiguring,),to=client)
 	
 	def setup(config,logFilePath):
 		# Open file pointer for log file
