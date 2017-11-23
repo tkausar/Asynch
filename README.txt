@@ -7,9 +7,9 @@ PLATFORM.
 
 INSTRUCTIONS.
 	After installing all above depenedencies, run the follwing commands:
-		python3 -m da -n node2 -D replica.da	#creates replicas at host node2
-		python3 -m da -n node3 -D client.da		#creates clients at host node3
-		python3 -m da -n node1 -D olympus.da	#creates olympus at host node1
+		python3 -m da -n node2 -D --message-buffer-size 8000 replica.da	#creates replicas at host node2
+		python3 -m da -n node3 -D --message-buffer-size 8000 client.da		#creates clients at host node3
+		python3 -m da -n node1 -D --message-buffer-size 8000 olympus.da	#creates olympus at host node1
 		python3 -m da -n node0 init.da ../config/config1.txt	#this runs the main process of our system for the testcase file named config1.txt
 		
 WORKLOAD GENERATION.
@@ -32,6 +32,16 @@ CONTRIBUTIONS.
 		timeout and send request to all replicas if timely response not received 
 		logging
 		configuration files
+		head: send reconfiguration-request if timeout waiting for result shuttle 
+		non-head: send reconfiguration-request if timeout waiting for result shuttle 
+		after forwarding request to head detect provable misbehavior and send reconfiguration-request
+		head: periodically initiate checkpoint, send checkpoint shuttle
+		non-head: add signed checkpoint proof, send updated checkpoint shuttle
+		handle completed checkpoint shuttle: validate completed checkpoint proof,
+		delete history prefix, forward completed checkpoint proof
+		handle catch-up message, execute operations, send caught-up message 
+		fault-injection: additional triggers for phase 3 
+		fault-injection: additional failures for phase 3
 		
 	Tanwee:
 		dictionary object: support put, get, slice, append
@@ -42,6 +52,17 @@ CONTRIBUTIONS.
 		creates initial configuration: create keys, create, setup, and start processes
 		hashing and public-key cryptography
 		Readme and testing.txt
+		Handled reconfiguration request
+		Sent wedged messages
+		Validated wedged messages
+		Find valid quorum 
+		Find longest history
+		Send catchup to replicas
+		Validate caught-up messgaes
+		Consistency check 
+		Computed inititial running state
+		Setup processes for new replicas
+		Setup new keys
 	
 MAIN FILES.
 	./src/replica.da
@@ -50,9 +71,9 @@ MAIN FILES.
 	./src/init.da 
 
 CODE SIZE.
-	./src/replica.da - Algo LOC ~ 207 ; Other LOC ~ 83 ; Total non blank LOC ~ 290 
-	./src/client.da -  Algo LOC ~ 92  ; Other LOC ~ 28 ; Total non blank LOC ~ 120
-	./src/olympus.da - Algo LOC ~ 53  ; Other LOC ~ 36 ; Total non blank LOC ~ 89
+	./src/replica.da - Algo LOC ~ 407 ; Other LOC ~ 83 ; Total non blank LOC ~ 290 
+	./src/client.da -  Algo LOC ~ 127  ; Other LOC ~ 28 ; Total non blank LOC ~ 120
+	./src/olympus.da - Algo LOC ~ 213  ; Other LOC ~ 36 ; Total non blank LOC ~ 89
 	./src/init.da -    Algo LOC ~ 10  ; Other LOC ~ 16 ; Total non blank LOC ~ 26
 
 LANGUAGE FEATURE USAGE.

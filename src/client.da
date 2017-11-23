@@ -109,10 +109,12 @@ class Client(process):
 
 	def receive(msg=('ReconfigStatus',status,), from_=oly):
 		self.reconfigState = status
+		if(status):
+			log("\n\nOlympus has reconfigured...")
 	
 	def sendRequest():
 		for operation in self.requestSequenceList:
-			log("\n\nChecking with Olympus if configuration changed")
+			log("\n\nChecking with Olympus if configuration has changed")
 			send(('CheckReconfigState',),to=self.olympus)
 			#if(self.reconfigState):
 			#	log("\nOlympus is reconfiguring....waiting for new configuration")
