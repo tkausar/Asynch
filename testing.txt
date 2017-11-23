@@ -1,4 +1,5 @@
 Entry1:
+   	print(shuttle)
 	1. Scenario - 2 clients, 3 replicas , no timeout, non pseudoRandom Workload
 	2. config1.txt
 	3. Running commands:
@@ -136,3 +137,104 @@ Entry10:
 	5. Programmatic check :
 		Replica_2 log file displays "Proof of misbehavior"
 	6. Fail because of the failure introduced in the config file. Changed result doesn't match with the previous result statements.
+
+Entry11:
+        1. Scenario - clients - 1, replica - 3
+        2. config11.txt
+        3. Running commands:
+                python3 -m da -n node2 -D replica.da
+                python3 -m da -n node3 -D client.da
+                python3 -m da -n node1 -D olympus.da
+                python3 -m da -n node0 init.da ../config/config10.txt
+        4. Log files generated inside the folder - ./src/logs/test11/
+        5. Programmatic check :
+                Replica_1 (head replica timeout waiting for result shuttle and send reconfig request to olympus)
+
+Entry12:(head replica timeout)
+        1. Scenario - clients - 1, replica - 3
+        2. config12.txt
+        3. Running commands:
+                python3 -m da -n node2 -D replica.da
+                python3 -m da -n node3 -D client.da
+                python3 -m da -n node1 -D olympus.da
+                python3 -m da -n node0 init.da ../config/config10.txt
+        4. Log files generated inside the folder - ./src/logs/test11/
+        5. Programmatic check :
+		All non head replica timeout waiting for result shuttle and send reconfig request to olympus
+
+Entry13:(non head replica timeout)
+        1. Scenario - clients - 1, replica - 3
+		2nd replica will change to get('X') and will send to tail replica and tail replica will send reconfiguration request to olympus 
+        2. config13.txt
+        3. Running commands:
+                python3 -m da -n node2 -D replica.da
+                python3 -m da -n node3 -D client.da
+                python3 -m da -n node1 -D olympus.da
+                python3 -m da -n node0 init.da ../config/config10.txt
+        4. Log files generated inside the folder - ./src/logs/test11/
+	5. Programmatic check :
+		Olympus will sedn catch up message to replica three.
+
+
+Entry13:(change operation)
+        1. Scenario - clients - 1, replica - 3
+                2nd replica will change to get('X') and will send to tail replica and tail replica will send reconfiguration request to olympus
+        2. config13.txt
+        3. Running commands:
+                python3 -m da -n node2 -D replica.da
+                python3 -m da -n node3 -D client.da
+                python3 -m da -n node1 -D olympus.da
+                python3 -m da -n node0 init.da ../config/config10.txt
+        4. Log files generated inside the folder - ./src/logs/test11/
+        5. Programmatic check :
+                Olympus will sedn catch up message to replica three.
+
+Entry14:(invalid_order_sig)
+        1. Scenario - clients - 1, replica - 3
+		Invalid signature of order statement in head replica is appended to shuttle
+        2. config13.txt
+        3. Running commands:
+                python3 -m da -n node2 -D replica.da
+                python3 -m da -n node3 -D client.da
+                python3 -m da -n node1 -D olympus.da
+                python3 -m da -n node0 init.da ../config/config10.txt
+        4. Log files generated inside the folder - ./src/logs/test11/
+        5. Programmatic check :
+		2nd replica will send reconfigure request because order proof is invalid
+
+Entry15:(invalid_result_sig)
+        1. Scenario - clients - 1, replica - 3
+                Invalid signature of result statement in head replica is appended to shuttle
+        2. config13.txt
+        3. Running commands:
+                python3 -m da -n node2 -D replica.da
+                python3 -m da -n node3 -D client.da
+                python3 -m da -n node1 -D olympus.da
+                python3 -m da -n node0 init.da ../config/config10.txt
+        4. Log files generated inside the folder - ./src/logs/test11/
+        5. Programmatic check :
+                2nd replica will send reconfigure request because result proof is invalid
+
+Entry17:(crash)
+        1. Scenario - clients - 1, replica - 3
+        2. config13.txt
+        3. Running commands:
+                python3 -m da -n node2 -D replica.da
+                python3 -m da -n node3 -D client.da
+                python3 -m da -n node1 -D olympus.da
+                python3 -m da -n node0 init.da ../config/config10.txt
+        4. Log files generated inside the folder - ./src/logs/test11/
+        5. Programmatic check :
+                2nd replica will crash 
+
+Entry18:(extra_op)
+        1. Scenario - clients - 1, replica - 3
+        2. config13.txt
+        3. Running commands:
+                python3 -m da -n node2 -D replica.da
+                python3 -m da -n node3 -D client.da
+                python3 -m da -n node1 -D olympus.da
+                python3 -m da -n node0 init.da ../config/config10.txt
+        4. Log files generated inside the folder - ./src/logs/test11/
+        5. Programmatic check :
+		2nd replica will perform one extra operation put('a','a')
