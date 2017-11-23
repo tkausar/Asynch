@@ -1,7 +1,7 @@
 # test case name. can be used to trigger test case specific code in client,
 # e.g., to generate special request sequences or validate intermediate or
 # final values of object state. [2017-09-12: added this item]
-test_case_name = test13
+test_case_name = test17
 # number of failures to tolerate. number of replicas is 2t+1.
 t = 1
 # number of clients
@@ -22,5 +22,5 @@ expectedResult[0] = OK;OK;star wars
 # configurations are numbered starting with 0. replicas are numbered by
 # position in the chain, starting from 0. replicas without a specified
 # failure scenario are failure-free.
-failures[0,2] = client_request(1,1),change_operation()
-#failures[,] = result_shuttle(0,1),drop(); shuttle(1,3),omit_send()
+failures[0,2] = client_request(1,2),crash()
+#failures[1,2] = result_shuttle(0,1),drop(); shuttle(1,3),omit_send()
