@@ -141,6 +141,8 @@ class Olympus(process):
 		self.caughtUpMessagesCount+=1
 		self.caughtUpRunningStateMessages.append(runningState) 
 		self.caughtUpResultProofMessages.append(resultStatement)
+		for each in self.clientList:
+			send(('ResultFromOlympus',resultStatement,),to=each["obj"])
 	
 	def isCaughtUpMessageConsistent():
 		commonRunningState = self.caughtUpRunningStateMessages[0]
@@ -221,7 +223,7 @@ class Olympus(process):
 			log("\n\nSending catch up messages to replicas in validQuorum "+ str(validQuorum))
 			sendCatchUp(validQuorum,longestHistReplica)
 			if await(self.caughtUpMessagesCount==self.sendCatchUpMessagesCount):		
-				log("\n\nReceived all caught up messages.Checking consistency among caught up messages")
+				log("\n\nReceived all caught up messages.\nChecking consistency among caught up messages")
 				isCached,ch = isCaughtUpMessageConsistent()
 				if(isCached):
 					log("\nCaught Up Messages are consistent. Final valid quorum = "+str(validQuorum))

@@ -59,7 +59,7 @@ class Client(process):
 
 	#msg from olympus
 	def receive(msg=('setupClient',replica,verifyKeyHexClientList,verifyKeyHexReplicaList,),from_=oly):
-		log("\nReceived replica list and public keys from olympus")
+		log("\n\nSetting the configuration.....\nReceived replica list and public keys from olympus")
 		self.olympus = oly
 		self.replicaList = replica
 		self.setupFlag = True
@@ -111,6 +111,9 @@ class Client(process):
 		self.reconfigState = status
 		if(status):
 			log("\n\nOlympus has reconfigured...")
+			
+	def receive(msg=('ResultFromOlympus',result,), from_=oly):
+		log("\n\nResult from Olympus after reconfiguration : "+str(result))
 	
 	def sendRequest():
 		for operation in self.requestSequenceList:

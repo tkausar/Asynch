@@ -138,7 +138,7 @@ Entry10:
 		Replica_2 log file displays "Proof of misbehavior"
 	6. Fail because of the failure introduced in the config file. Changed result doesn't match with the previous result statements.
 
-Entry11:
+Entry11: Head timeout
         1. Scenario - clients - 1, replica - 3
         2. config11.txt
         3. Running commands:
@@ -150,7 +150,7 @@ Entry11:
         5. Programmatic check :
                 Replica_1 (head replica timeout waiting for result shuttle and send reconfig request to olympus)
 
-Entry12:(head replica timeout)
+Entry12:(non - head replica timeout)
         1. Scenario - clients - 1, replica - 3
         2. config12.txt
         3. Running commands:
@@ -158,11 +158,11 @@ Entry12:(head replica timeout)
                 python3 -m da -n node3 -D client.da
                 python3 -m da -n node1 -D olympus.da
                 python3 -m da -n node0 init.da ../config/config10.txt
-        4. Log files generated inside the folder - ./src/logs/test11/
+        4. Log files generated inside the folder - ./src/logs/test12/
         5. Programmatic check :
 		All non head replica timeout waiting for result shuttle and send reconfig request to olympus
 
-Entry13:(non head replica timeout)
+Entry13:(detect provable misbehavior and send reconfig request ; process operation in catch up message) 
         1. Scenario - clients - 1, replica - 3
 		2nd replica will change to get('X') and will send to tail replica and tail replica will send reconfiguration request to olympus 
         2. config13.txt
@@ -173,8 +173,9 @@ Entry13:(non head replica timeout)
                 python3 -m da -n node0 init.da ../config/config10.txt
         4. Log files generated inside the folder - ./src/logs/test11/
 	5. Programmatic check :
-		Olympus will sedn catch up message to replica three.
-
+		Olympus will send catch up message to replica three.
+		Caught Up message from olympus for operationput('movie','star')
+		DB Status - {'movie': 'star'}
 
 Entry13:(change operation)
         1. Scenario - clients - 1, replica - 3
@@ -188,6 +189,21 @@ Entry13:(change operation)
         4. Log files generated inside the folder - ./src/logs/test11/
         5. Programmatic check :
                 Olympus will sedn catch up message to replica three.
+				
+Entry1:(checkpoint)
+        1. Scenario - clients - 1, replica - 3
+                2nd replica will change to get('X') and will send to tail replica and tail replica will send reconfiguration request to olympus
+        2. config13.txt
+        3. Running commands:
+                python3 -m da -n node2 -D replica.da
+                python3 -m da -n node3 -D client.da
+                python3 -m da -n node1 -D olympus.da
+                python3 -m da -n node0 init.da ../config/config10.txt
+        4. Log files generated inside the folder - ./src/logs/test11/
+        5. Programmatic check :
+                Intiating checkpoint at slotNumber4
+
+
 
 Entry14:(invalid_order_sig)
         1. Scenario - clients - 1, replica - 3
@@ -238,3 +254,27 @@ Entry18:(extra_op)
         4. Log files generated inside the folder - ./src/logs/test11/
         5. Programmatic check :
 		2nd replica will perform one extra operation put('a','a')
+
+Entry19:(increment_slot)
+        1. Scenario - clients - 1, replica - 3
+        2. config13.txt
+        3. Running commands:
+                python3 -m da -n node2 -D replica.da
+                python3 -m da -n node3 -D client.da
+                python3 -m da -n node1 -D olympus.da
+                python3 -m da -n node0 init.da ../config/config19.txt
+        4. Log files generated inside the folder - ./src/logs/test19/
+        5. Programmatic check :
+		   Replica_1.log says Hole in slot Number
+
+Entry20:(drop)
+        1. Scenario - clients - 1, replica - 3
+        2. config13.txt
+        3. Running commands:
+                python3 -m da -n node2 -D replica.da
+                python3 -m da -n node3 -D client.da
+                python3 -m da -n node1 -D olympus.da
+                python3 -m da -n node0 init.da ../config/config19.txt
+        4. Log files generated inside the folder - ./src/logs/test19/
+        5. Programmatic check :
+		   Replica_1.log says Dropping incoming request
